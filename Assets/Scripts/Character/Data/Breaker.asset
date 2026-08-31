@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d69843697115934458358a53c36be84d, type: 3}
+  m_Name: Breaker
+  m_EditorClassIdentifier: 
+  characterName: Breaker
+  description: 
+  maxHP: 130
+  attackPower: 25
+  normalAttackSpeed: 5
+  skill1: {fileID: 11400000, guid: 43e31665a1455be478b8842776ea0788, type: 2}
+  skill2: {fileID: 11400000, guid: 6655edf7f6ec25845ac6e48894aefd4d, type: 2}
+  skill3: {fileID: 11400000, guid: de17e07c6428acd4da233738fee9d47a, type: 2}

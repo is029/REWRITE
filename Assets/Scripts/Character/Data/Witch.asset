@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d69843697115934458358a53c36be84d, type: 3}
+  m_Name: Witch
+  m_EditorClassIdentifier: 
+  characterName: Witch
+  description: 
+  maxHP: 100
+  attackPower: 12
+  normalAttackSpeed: 5
+  skill1: {fileID: 11400000, guid: f87176708aa40fc48a8ddc4f243c3311, type: 2}
+  skill2: {fileID: 11400000, guid: 7863205335b2cad45bf9e3b0c5244c53, type: 2}
+  skill3: {fileID: 11400000, guid: c5f94a768dc10e94f9a73e00c0677811, type: 2}
