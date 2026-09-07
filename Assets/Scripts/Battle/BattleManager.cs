@@ -4,9 +4,15 @@ public class BattleManager : MonoBehaviour
 {
     public static BattleManager Instance { get; private set; }
 
+    [Header("Result UI")]
+    [SerializeField] private BattleResultUI battleResultUI;
+
     [Header("Managers")]
     [SerializeField] private TurnManager turnManager;
     [SerializeField] private EnemyAI enemyAI;
+
+    [Header("Battle Settings")]
+    [SerializeField] private bool isBossBattle = false;
 
     [Header("Units")]
     [SerializeField] private BattleUnit player;
@@ -14,6 +20,8 @@ public class BattleManager : MonoBehaviour
 
     [Header("UI")]
     [SerializeField] private EnemyFutureUI enemyFutureUI;
+
+    private bool battleEnded = false;
 
     public EnemyFutureUI EnemyFutureUI => enemyFutureUI;
     public TurnManager TurnManager => turnManager;
@@ -40,17 +48,23 @@ public class BattleManager : MonoBehaviour
 
     public void StartTurn()
     {
-        enemyAI.CreateActions();
+        Debug.Log(
+            "===== START TURN " +
+            turnManager.CurrentTurn +
+            " ====="
+        );
 
-        enemyFutureUI.ShowEnemyFuture();
-
+        // 新しいターンなので予約行動をリセット
         turnManager.StartTurn();
 
-        Debug.Log(
-            "===== TURN " +
-            turnManager.CurrentTurn +
-            " START ====="
-        );
+        // 敵の行動を再生成
+        enemyAI.CreateActions();
+
+        // 敵未来UI更新
+        if (enemyFutureUI != null)
+        {
+            enemyFutureUI.ShowEnemyFuture();
+        }
     }
 
     public void SelectAction(ActionType actionType)
@@ -80,6 +94,13 @@ public class BattleManager : MonoBehaviour
 
         enemy.TakeDamage(damage);
 
+        CheckBattleResult();
+
+        if (battleEnded)
+        {
+            return;
+        }
+
         if (enemy.HasCounter())
         {
             int counterDamage =
@@ -95,9 +116,12 @@ public class BattleManager : MonoBehaviour
             );
 
             enemy.ConsumeCounter();
+
+            CheckBattleResult();
         }
     }
 
+    // プレイヤースキル
     public void ExecutePlayerSkill(
     SkillData skill,
     bool enemyDefending)
@@ -134,6 +158,7 @@ public class BattleManager : MonoBehaviour
                 }
 
                 enemy.TakeDamage(damage);
+                CheckBattleResult();
 
                 break;
 
@@ -282,8 +307,11 @@ public class BattleManager : MonoBehaviour
         }
 
         player.TakeDamage(damage);
+
+        CheckBattleResult();
     }
 
+    // 敵回復
     public void EnemyHeal()
     {
         enemy.Heal(15);
@@ -293,6 +321,204 @@ public class BattleManager : MonoBehaviour
         );
     }
 
+    // 敵スキル
+    public void ExecuteEnemySkill(
+        SkillData skill,
+        bool playerDefending)
+    {
+        if (skill == null)
+        {
+            Debug.LogWarning(
+                "Enemy SkillDataがありません。"
+            );
+
+            return;
+        }
+
+        Debug.Log(
+            "Enemy：" +
+            skill.skillName +
+            " 発動！"
+        );
+
+        switch (skill.effectType)
+        {
+            case SkillEffectType.Damage:
+
+                int damage = skill.power;
+
+                if (playerDefending)
+                {
+                    damage /= 2;
+
+                    Debug.Log(
+                        "Playerは防御中！" +
+                        "スキルダメージ半減！"
+                    );
+                }
+
+                player.TakeDamage(damage);
+
+                break;
+
+
+            case SkillEffectType.Heal:
+
+                enemy.Heal(skill.power);
+
+                Debug.Log(
+                    "Enemyが" +
+                    skill.power +
+                    "回復！"
+                );
+
+                break;
+
+
+            case SkillEffectType.Slow:
+
+                player.ChangeSpeed(
+                    -skill.power,
+                    skill.duration
+                );
+
+                Debug.Log(
+                    "PlayerのSpeedが " +
+                    skill.power +
+                    " 下がった！"
+                );
+
+                break;
+
+
+            case SkillEffectType.SpeedUp:
+
+                enemy.ChangeSpeed(
+                    skill.power,
+                    skill.duration
+                );
+
+                Debug.Log(
+                    "EnemyのSpeedが " +
+                    skill.power +
+                    " 上がった！"
+                );
+
+                break;
+
+
+            case SkillEffectType.AttackUp:
+
+                enemy.ChangeAttack(
+                    skill.power,
+                    skill.duration
+                );
+
+                Debug.Log(
+                    "Enemyの攻撃力が " +
+                    skill.power +
+                    " 上がった！"
+                );
+
+                break;
+
+
+            case SkillEffectType.AttackDown:
+
+                player.ChangeAttack(
+                    -skill.power,
+                    skill.duration
+                );
+
+                Debug.Log(
+                    "Playerの攻撃力が " +
+                    skill.power +
+                    " 下がった！"
+                );
+
+                break;
+
+
+            case SkillEffectType.DefenseDown:
+
+                Debug.Log(
+                    "Playerの防御力を低下！"
+                );
+
+                break;
+
+
+            case SkillEffectType.Counter:
+
+                enemy.AddStatusEffect(
+                    StatusEffectType.Counter,
+                    skill.power,
+                    skill.duration
+                );
+
+                Debug.Log(
+                    "Enemyはカウンターを構えた！"
+                );
+
+                break;
+
+
+            case SkillEffectType.Burn:
+
+                player.TakeDamage(
+                    skill.power
+                );
+
+                player.AddStatusEffect(
+                    StatusEffectType.Burn,
+                    skill.power / 2,
+                    skill.duration
+                );
+
+                Debug.Log(
+                    "Playerに火傷を付与！"
+                );
+
+                break;
+
+
+            case SkillEffectType.Poison:
+
+                player.AddStatusEffect(
+                    StatusEffectType.Poison,
+                    skill.power,
+                    skill.duration
+                );
+
+                Debug.Log(
+                    "Playerに毒を付与！"
+                );
+
+                break;
+
+
+            case SkillEffectType.Rewrite:
+
+                Debug.Log(
+                    "===== BOSS REWRITE ====="
+                );
+
+                break;
+
+
+            case SkillEffectType.None:
+
+                Debug.Log(
+                    "Enemy Skill：効果なし"
+                );
+
+                break;
+        }
+
+        CheckBattleResult();
+    }
+
+    // 敵行動
     public void ExecuteEnemyAction(
         BattleAction action,
         bool playerDefending)
@@ -322,8 +548,15 @@ public class BattleManager : MonoBehaviour
             case ActionType.Skill:
 
                 Debug.Log(
-                    "Enemy：スキル！ SPEED " +
+                    "Enemy：スキル！ " +
+                    action.skillData.skillName +
+                    " / SPEED " +
                     action.speed
+                );
+
+                ExecuteEnemySkill(
+                    action.skillData,
+                    playerDefending
                 );
 
                 break;
@@ -338,6 +571,67 @@ public class BattleManager : MonoBehaviour
                 EnemyHeal();
 
                 break;
+        }
+    }
+
+    // 勝利判定
+    private void CheckBattleResult()
+    {
+        if (battleEnded)
+        {
+            return;
+        }
+
+        if (Player.IsDead)
+        {
+            battleEnded = true;
+
+            Debug.Log("===== PLAYER LOSE =====");
+
+            TurnManager.StopBattle();
+
+            if (battleResultUI != null)
+            {
+                battleResultUI.ShowDefeat();
+            }
+
+            return;
+        }
+
+        if (Enemy.IsDead)
+        {
+            battleEnded = true;
+
+            Debug.Log("===== PLAYER WIN =====");
+
+            TurnManager.StopBattle();
+
+            if (RoguelikeManager.Instance != null)
+            {
+                if (isBossBattle)
+                {
+                    // ボス撃破
+                    Debug.Log("===== BOSS DEFEATED =====");
+
+                    RoguelikeManager.Instance.GameClear();
+                }
+                else
+                {
+                    // 通常戦闘クリア
+                    RoguelikeManager.Instance.NormalBattleClear(
+                        turnManager.CurrentTurn
+                    );
+                }
+            }
+
+
+            // 勝利UI表示
+            if (battleResultUI != null)
+            {
+                battleResultUI.ShowVictory();
+            }
+
+            return;
         }
     }
 }

@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d69843697115934458358a53c36be84d, type: 3}
-  m_Name: ArcMage
+  m_Name: BossCharacterData
   m_EditorClassIdentifier: 
-  characterName: ArcMage
-  description: 
-  maxHP: 90
-  attackPower: 16
-  normalAttackSpeed: 4
-  skill1: {fileID: 11400000, guid: c1e26dc78c94311408ed1824bde99470, type: 2}
-  skill2: {fileID: 11400000, guid: e677306ce333b3d4f9e57435949a4b98, type: 2}
-  skill3: {fileID: 11400000, guid: f454e27394ad6cd48af0bf0abbc51d44, type: 2}
+  characterName: BOSS
+  description: "\u6700\u7D42\u30DC\u30B9"
+  maxHP: 50
+  attackPower: 35
+  normalAttackSpeed: 6
+  skill1: {fileID: 0}
+  skill2: {fileID: 0}
+  skill3: {fileID: 0}

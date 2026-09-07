@@ -43,6 +43,7 @@ public class SkillUIManager : MonoBehaviour
 
     public void OpenSkillPanel()
     {
+        SetupSkills();
         skillPanel.SetActive(true);
     }
 
@@ -70,8 +71,8 @@ public class SkillUIManager : MonoBehaviour
     }
 
     private void SetSkillText(
-        TMP_Text text,
-        SkillData skill)
+    TMP_Text text,
+    SkillData skill)
     {
         if (skill == null)
         {
@@ -79,10 +80,24 @@ public class SkillUIManager : MonoBehaviour
             return;
         }
 
+        int speed = skill.speed;
+
+        BattleUnit player =
+            BattleManager.Instance.Player;
+
+        if (player != null)
+        {
+            speed =
+                player.GetActionSpeed(
+                    ActionType.Skill,
+                    skill
+                );
+        }
+
         text.text =
             skill.skillName +
             "\nSPEED " +
-            skill.speed;
+            speed;
     }
 
     private void SelectSkill(SkillData skill)

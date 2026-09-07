@@ -4248,8 +4248,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   battleResultUI: {fileID: 471903836}
   turnManager: {fileID: 1705268082}
-  enemyAI: {fileID: 1932290586}
-  isBossBattle: 0
+  enemyAI: {fileID: 0}
+  isBossBattle: 1
   player: {fileID: 597109564}
   enemy: {fileID: 1771176148}
   enemyFutureUI: {fileID: 1711043402}
@@ -7385,7 +7385,7 @@ GameObject:
   - component: {fileID: 1771176149}
   - component: {fileID: 1771176148}
   m_Layer: 0
-  m_Name: Enemy
+  m_Name: Boss
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7403,7 +7403,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d92878f19e3079843b88cce257c0b2cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  characterData: {fileID: 11400000, guid: 7adddf4caf252e740b79d3bf2162c4f4, type: 2}
+  characterData: {fileID: 11400000, guid: e33718251d6bfa44aae7fcf2ef894887, type: 2}
   isPlayer: 0
 --- !u!212 &1771176149
 SpriteRenderer:
@@ -8155,7 +8155,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1932290587}
-  - component: {fileID: 1932290586}
+  - component: {fileID: 1932290588}
   m_Layer: 0
   m_Name: EnemyAI
   m_TagString: Untagged
@@ -8163,18 +8163,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1932290586
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1932290585}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e0c4adf5ae84ea447b9dd2eac9773328, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &1932290587
 Transform:
   m_ObjectHideFlags: 0
@@ -8190,6 +8178,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1932290588
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1932290585}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65235805eef2e9d4684b732ef103b071, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  skills:
+  - {fileID: 11400000, guid: 84e28906ef68ae04381d674fa1710ff7, type: 2}
+  - {fileID: 11400000, guid: 9429902e8d03bd14f9d531997e1ace83, type: 2}
+  - {fileID: 11400000, guid: 9367dd094e220364fa5ef19936c4dac9, type: 2}
 --- !u!1 &1942153317
 GameObject:
   m_ObjectHideFlags: 0

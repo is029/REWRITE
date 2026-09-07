@@ -1,16 +1,19 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class TurnManager : MonoBehaviour
 {
-    public const int ActionsPerTurn = 3;
+    public static TurnManager instance;
 
     private List<BattleAction> playerActions =
         new List<BattleAction>();
 
     private int playerSpeedModifier = 0;
     private int enemySpeedModifier = 0;
+
+    public event Action OnActionsReset;
 
     public int CurrentTurn { get; private set; } = 1;
 
@@ -21,6 +24,15 @@ public class TurnManager : MonoBehaviour
 
     public bool IsExecuting { get; private set; }
 
+    public int GetActionsPerTurn()
+    {
+        if (RuleManager.Instance == null)
+        {
+            return 3;
+        }
+
+        return RuleManager.Instance.CurrentActionsPerTurn;
+    }
 
     // ========================================
     // プレイヤーの通常行動を予約
@@ -33,7 +45,8 @@ public class TurnManager : MonoBehaviour
             return false;
         }
 
-        if (playerActions.Count >= ActionsPerTurn)
+        int actionPerTurn = GetActionsPerTurn();
+        if (playerActions.Count >= actionPerTurn)
         {
             Debug.Log("このターンの行動は3つまでです。");
             return false;
@@ -75,7 +88,9 @@ public class TurnManager : MonoBehaviour
             return false;
         }
 
-        if (playerActions.Count >= ActionsPerTurn)
+        int actionPerTurn = GetActionsPerTurn();
+
+        if (playerActions.Count >= actionPerTurn)
         {
             Debug.Log("このターンの行動は3つまでです。");
             return false;
@@ -144,17 +159,27 @@ public class TurnManager : MonoBehaviour
         return playerActions;
     }
 
+    public void ClearPlayerActions()
+    {
+        if (IsExecuting)
+        {
+            return;
+        }
+
+        playerActions.Clear();
+
+        Debug.Log("プレイヤーの予約行動をすべてクリアしました。");
+
+        OnActionsReset?.Invoke();
+    }
 
     // ========================================
     // ターン開始
     // ========================================
-
     public void StartTurn()
     {
+        // プレイヤーの予約行動をリセット
         playerActions.Clear();
-
-        playerSpeedModifier = 0;
-        enemySpeedModifier = 0;
 
         IsExecuting = false;
 
@@ -164,9 +189,9 @@ public class TurnManager : MonoBehaviour
             " ====="
         );
 
-        RefreshEnemyFutureUI();
+        // UIにも「リセットした」と通知
+        OnActionsReset?.Invoke();
     }
-
 
     // ========================================
     // ターン実行開始
@@ -179,7 +204,9 @@ public class TurnManager : MonoBehaviour
             return;
         }
 
-        if (playerActions.Count != ActionsPerTurn)
+        int actionPerTurn = GetActionsPerTurn();
+
+        if (playerActions.Count != actionPerTurn)
         {
             Debug.Log(
                 "3つの行動を選択してください。"
@@ -204,8 +231,10 @@ public class TurnManager : MonoBehaviour
             BattleManager.Instance.EnemyAI
             .GetEnemyActions();
 
+        int actionPerTurn = GetActionsPerTurn();
+
         if (enemyActions == null ||
-            enemyActions.Count < ActionsPerTurn)
+            enemyActions.Count < actionPerTurn)
         {
             Debug.LogError(
                 "敵の行動が3つ作成されていません。"
@@ -224,8 +253,16 @@ public class TurnManager : MonoBehaviour
         // ① → ② → ③
         // ====================================
 
-        for (int i = 0; i < ActionsPerTurn; i++)
+        for (int i = 0; i < actionPerTurn; i++)
         {
+            if (
+                BattleManager.Instance.Player.IsDead ||
+                BattleManager.Instance.Enemy.IsDead
+)
+            {
+                yield break;
+            }
+
             BattleAction playerAction =
                 playerActions[i];
 
@@ -423,24 +460,116 @@ public class TurnManager : MonoBehaviour
             " END ====="
         );
 
+        // 状態異常・Buff/Debuff処理
+        BattleManager.Instance.Player.EndTurnEffects();
+        BattleManager.Instance.Enemy.EndTurnEffects();
 
-        // ====================================
-        // Buff / Debuffのターン経過
-        // ====================================
+        // アイテムクールタイム減少
+        RoguelikeManager.Instance.PlayerData.ReduceItemCooldown();
 
-        BattleManager.Instance.Player
-            .EndTurnEffects();
-
-        BattleManager.Instance.Enemy
-            .EndTurnEffects();
-
-
+        // 次のターンへ
         CurrentTurn++;
 
         IsExecuting = false;
 
+        Debug.Log(
+            "===== NEXT TURN : " +
+            CurrentTurn +
+            " ====="
+        );
 
-        // 次のターン
+        // 自動的に次ターン開始
         BattleManager.Instance.StartTurn();
+    }
+
+    public bool ReplacePlayerAction(
+    int index,
+    ActionType actionType)
+    {
+        if (IsExecuting)
+        {
+            return false;
+        }
+
+        if (index < 0 ||
+            index >= playerActions.Count)
+        {
+            return false;
+        }
+
+        BattleAction action =
+            new BattleAction(
+                actionType,
+                true,
+                BattleManager.Instance.Player
+            );
+
+        playerActions[index] = action;
+
+        Debug.Log(
+            "行動" +
+            (index + 1) +
+            "を " +
+            actionType +
+            " に変更しました。"
+        );
+
+        RefreshEnemyFutureUI();
+
+        return true;
+    }
+
+    public bool ReplacePlayerSkill(
+    int index,
+    SkillData skill)
+    {
+        if (IsExecuting)
+        {
+            return false;
+        }
+
+        if (index < 0 ||
+            index >= playerActions.Count)
+        {
+            return false;
+        }
+
+        if (skill == null)
+        {
+            return false;
+        }
+
+        BattleAction action =
+            new BattleAction(
+                ActionType.Skill,
+                true,
+                BattleManager.Instance.Player,
+                skill
+            );
+
+        playerActions[index] = action;
+
+        Debug.Log(
+            "行動" +
+            (index + 1) +
+            "をスキル「" +
+            skill.skillName +
+            "」に変更しました。"
+        );
+
+        RefreshEnemyFutureUI();
+
+        return true;
+    }
+
+    public void StopBattle()
+    {
+        StopAllCoroutines();
+
+        IsExecuting = false;
+
+        Debug.Log(
+            "TurnManager：バトル停止"
+        );
     }
 }

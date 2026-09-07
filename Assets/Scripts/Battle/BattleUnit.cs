@@ -9,6 +9,9 @@ public class BattleUnit : MonoBehaviour
 
     private int currentHP;
 
+    private bool isDead = false;
+    [SerializeField] private bool isPlayer;
+
     // ========================================
     // 現在のBuff / Debuff
     // ========================================
@@ -26,28 +29,75 @@ public class BattleUnit : MonoBehaviour
     public string UnitName =>
         characterData.characterName;
 
-    public int MaxHP =>
-        characterData.maxHP;
-
     public int CurrentHP =>
         currentHP;
 
     private List<StatusEffect> statusEffects =
         new List<StatusEffect>();
 
-    public int AttackPower =>
-        Mathf.Max(
-            0,
-            characterData.attackPower +
-            attackModifier
-        );
+    public int MaxHP
+    {
+        get
+        {
+            int bonus = 0;
 
-    public int NormalAttackSpeed =>
-        Mathf.Max(
-            0,
-            characterData.normalAttackSpeed +
-            speedModifier
-        );
+            if (isPlayer &&
+                RoguelikeManager.Instance != null)
+            {
+                bonus =
+                    RoguelikeManager.Instance
+                    .PlayerData.maxHPBonus;
+            }
+
+            return characterData.maxHP + bonus;
+        }
+    }
+
+    public int AttackPower
+    {
+        get
+        {
+            int runBonus = 0;
+
+            if (isPlayer &&
+                RoguelikeManager.Instance != null)
+            {
+                runBonus =
+                    RoguelikeManager.Instance
+                    .PlayerData.attackBonus;
+            }
+
+            return Mathf.Max(
+                0,
+                characterData.attackPower +
+                runBonus +
+                attackModifier
+            );
+        }
+    }
+
+    public int NormalAttackSpeed
+    {
+        get
+        {
+            int runBonus = 0;
+
+            if(isPlayer &&
+                RoguelikeManager.Instance != null)
+            {
+                runBonus =
+                    RoguelikeManager.Instance
+                    .PlayerData.speedBonus;
+            }
+
+            return Mathf.Max(
+                0,
+                characterData.normalAttackSpeed +
+                runBonus +
+                speedModifier
+            );
+        }
+    }
 
 
     public int SpeedModifier =>
@@ -69,9 +119,20 @@ public class BattleUnit : MonoBehaviour
     // ========================================
     // 初期化
     // ========================================
-
     private void Awake()
     {
+        // プレイヤーだけ選択したキャラクターを使用
+        if (isPlayer)
+        {
+            if (RoguelikeManager.Instance != null)
+            {
+                characterData =
+                    RoguelikeManager.Instance.PlayerCharacterData;
+            }
+        }
+
+        // EnemyはInspectorで設定したCharacterDataをそのまま使用
+
         if (characterData == null)
         {
             Debug.LogError(
@@ -82,8 +143,7 @@ public class BattleUnit : MonoBehaviour
             return;
         }
 
-        currentHP =
-            characterData.maxHP;
+        currentHP = characterData.maxHP;
     }
 
 
@@ -94,12 +154,32 @@ public class BattleUnit : MonoBehaviour
             return;
         }
 
+        LoadRunData();
+
         OnHPChanged?.Invoke(
             currentHP,
-            characterData.maxHP
+            MaxHP
         );
     }
 
+    private void LoadRunData()
+    {
+        if (!isPlayer)
+            return;
+
+        if (RoguelikeManager.Instance == null)
+            return;
+
+        PlayerRunData data =
+            RoguelikeManager.Instance.PlayerData;
+
+        // 現在HPを引き継ぐ
+        currentHP = Mathf.Clamp(
+            data.currentHP,
+            0,
+            MaxHP
+        );
+    }
 
     // ========================================
     // ダメージ
@@ -107,6 +187,11 @@ public class BattleUnit : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
+        if(IsDead)
+        {
+            return;
+        }
+
         damage =
             Mathf.Max(
                 0,
@@ -137,12 +222,18 @@ public class BattleUnit : MonoBehaviour
             MaxHP
         );
 
+        if (isPlayer &&
+            RoguelikeManager.Instance != null)
+        {
+            RoguelikeManager.Instance.PlayerData.currentHP =
+                currentHP;
+        }
+
         if (currentHP <= 0)
         {
             Die();
         }
     }
-
 
     // ========================================
     // 回復
@@ -179,6 +270,13 @@ public class BattleUnit : MonoBehaviour
             currentHP,
             MaxHP
         );
+
+        if (isPlayer &&
+            RoguelikeManager.Instance != null)
+        {
+            RoguelikeManager.Instance.PlayerData.currentHP =
+                currentHP;
+        }
     }
 
 
@@ -321,15 +419,35 @@ public class BattleUnit : MonoBehaviour
     }
 
 
+    public bool IsDead
+    {
+        get { return isDead; }
+    }
+
+
     // ========================================
     // 死亡
     // ========================================
-
     private void Die()
     {
+        if (isDead)
+        {
+            return;
+        }
+
+        isDead = true;
+
+        Debug.Log(
+            "================================"
+        );
+
         Debug.Log(
             UnitName +
             " は倒れた！"
+        );
+
+        Debug.Log(
+            "================================"
         );
     }
 
@@ -459,6 +577,64 @@ public class BattleUnit : MonoBehaviour
                 statusEffects.RemoveAt(i);
             }
         }
+    }
+
+    // 行動速度
+    public int GetActionSpeed(
+    ActionType type,
+    SkillData skill = null)
+    {
+        int runSpeedBonus = 0;
+
+        if (isPlayer &&
+            RoguelikeManager.Instance != null)
+        {
+            runSpeedBonus =
+                RoguelikeManager.Instance.PlayerData.speedBonus;
+        }
+
+        int baseSpeed = 0;
+
+        switch (type)
+        {
+            case ActionType.Attack:
+                baseSpeed = characterData.normalAttackSpeed;
+                break;
+
+            case ActionType.Defend:
+                baseSpeed = 8;
+                break;
+
+            case ActionType.Skill:
+                if (skill == null)
+                    return 0;
+
+                baseSpeed = skill.speed;
+                break;
+
+            case ActionType.Heal:
+                baseSpeed = 6;
+                break;
+
+            default:
+                return 0;
+        }
+
+        int finalSpeed =
+            baseSpeed +
+            runSpeedBonus +
+            speedModifier;
+
+        Debug.Log(
+            "【速度計算】" +
+            " 行動=" + type +
+            " 基礎=" + baseSpeed +
+            " RoguelikeSpeed=" + runSpeedBonus +
+            " Buff=" + speedModifier +
+            " 最終=" + finalSpeed
+        );
+
+        return Mathf.Max(0, finalSpeed);
     }
 
     public int GetCounterDamage()

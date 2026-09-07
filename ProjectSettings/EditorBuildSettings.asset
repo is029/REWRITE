@@ -6,8 +6,26 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/TitleScene.unity
+    guid: e025266166c79c44396ce1cf695605eb
+  - enabled: 1
+    path: Assets/Scenes/CharacterSelectScene.unity
+    guid: 9405703403e87b44ab2231571b60422f
+  - enabled: 1
     path: Assets/Scenes/BattleScene.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
+  - enabled: 1
+    path: Assets/Scenes/RewardScene.unity
+    guid: bdde79b7ec6f6244b9a4e0a2aff352f5
+  - enabled: 1
+    path: Assets/Scenes/UpgradeScene.unity
+    guid: 555226ceb169c2c458c3adbedf82cc0c
+  - enabled: 1
+    path: Assets/Scenes/BossBattleScene.unity
+    guid: e60035387f4d11246a63df02ad421466
+  - enabled: 1
+    path: Assets/Scenes/ClearScene.unity
+    guid: e022161dd4f3f30469ef59805198a810
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

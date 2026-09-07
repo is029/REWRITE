@@ -3,6 +3,9 @@ using UnityEngine;
 
 public class EnemyAI : MonoBehaviour
 {
+    [Header("“GƒXƒLƒ‹")]
+    [SerializeField] protected SkillData[] skills;
+
     public const int ActionsPerTurn = 3;
 
     private List<BattleAction> enemyActions =
@@ -13,7 +16,19 @@ public class EnemyAI : MonoBehaviour
         return enemyActions;
     }
 
-    public void CreateActions()
+    protected SkillData GetRandomSkill()
+    {
+        if (skills == null || skills.Length == 0)
+        {
+            return null;
+        }
+
+        return skills[
+            Random.Range(0, skills.Length)
+        ];
+    }
+
+    public virtual void CreateActions()
     {
         enemyActions.Clear();
 

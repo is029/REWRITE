@@ -25,32 +25,13 @@ public class BattleAction
     }
 
     private int GetSpeed(
-        ActionType type,
-        BattleUnit unit,
-        SkillData skill)
+    ActionType type,
+    BattleUnit unit,
+    SkillData skill)
     {
-        switch (type)
-        {
-            case ActionType.Attack:
-                return unit.NormalAttackSpeed;
-
-            case ActionType.Defend:
-                return 8;
-
-            case ActionType.Skill:
-
-                if (skill != null)
-                {
-                    return skill.speed;
-                }
-
-                return 0;
-
-            case ActionType.Heal:
-                return 6;
-
-            default:
-                return 0;
-        }
+        return unit.GetActionSpeed(
+            type,
+            skill
+        );
     }
 }

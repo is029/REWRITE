@@ -13,6 +13,7 @@ public class BattleUIManager : MonoBehaviour
     [SerializeField] private Button defendButton;
     [SerializeField] private Button skillButton;
     [SerializeField] private Button executeButton;
+    [SerializeField] private Button clearButton;
 
     [Header("Reserved Actions")]
     [SerializeField] private TMP_Text action1Text;
@@ -28,14 +29,20 @@ public class BattleUIManager : MonoBehaviour
 
     private TurnManager turnManager;
 
+    private int selectedActionIndex = -1;
+
     private void Start()
     {
         turnManager = FindObjectOfType<TurnManager>();
+        turnManager.OnActionsReset += OnTurnReset;
 
         attackButton.onClick.AddListener(OnAttackButton);
         defendButton.onClick.AddListener(OnDefendButton);
         skillButton.onClick.AddListener(OnSkillButton);
         executeButton.onClick.AddListener(OnExecuteButton);
+
+        // 追加
+        clearButton.onClick.AddListener(OnClearButton);
 
         BattleUnit player = BattleManager.Instance.Player;
         BattleUnit enemy = BattleManager.Instance.Enemy;
@@ -43,10 +50,66 @@ public class BattleUIManager : MonoBehaviour
         player.OnHPChanged += UpdatePlayerHP;
         enemy.OnHPChanged += UpdateEnemyHP;
 
-        UpdatePlayerHP(player.CurrentHP, player.MaxHP);
-        UpdateEnemyHP(enemy.CurrentHP, enemy.MaxHP);
+        UpdatePlayerHP(
+            player.CurrentHP,
+            player.MaxHP
+        );
+
+        UpdateEnemyHP(
+            enemy.CurrentHP,
+            enemy.MaxHP
+        );
 
         RefreshUI();
+    }
+
+    private void OnTurnReset()
+    {
+        Debug.Log(
+            "BattleUIManager：次のターンのUIをリセット"
+        );
+
+        // 選択中の行動を解除
+        selectedActionIndex = -1;
+
+        // UI更新
+        RefreshUI();
+
+        // 行動ボタンを有効化
+        SetActionButtonsInteractable(true);
+
+        // スキルパネルを閉じる
+        if (skillUIManager != null)
+        {
+            skillUIManager.CloseSkillPanel();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (turnManager != null)
+        {
+            turnManager.OnActionsReset -= OnTurnReset;
+        }
+
+        if (BattleManager.Instance != null)
+        {
+            BattleUnit player =
+                BattleManager.Instance.Player;
+
+            BattleUnit enemy =
+                BattleManager.Instance.Enemy;
+
+            if (player != null)
+            {
+                player.OnHPChanged -= UpdatePlayerHP;
+            }
+
+            if (enemy != null)
+            {
+                enemy.OnHPChanged -= UpdateEnemyHP;
+            }
+        }
     }
 
     private void OnAttackButton()
@@ -64,8 +127,43 @@ public class BattleUIManager : MonoBehaviour
         skillUIManager.OpenSkillPanel();
     }
 
+    private void OnClearButton()
+    {
+        if (turnManager == null)
+        {
+            return;
+        }
+
+        // 実行中はクリアできない
+        if (turnManager.IsExecuting)
+        {
+            return;
+        }
+
+        turnManager.ClearPlayerActions();
+
+        RefreshUI();
+
+        Debug.Log("プレイヤーの行動をすべてクリアしました。");
+    }
+
     private void SelectAction(ActionType actionType)
     {
+        // すでに選択されている行動がある場合
+        if (selectedActionIndex >= 0)
+        {
+            if (turnManager.ReplacePlayerAction(
+                selectedActionIndex,
+                actionType))
+            {
+                selectedActionIndex = -1;
+                RefreshUI();
+            }
+
+            return;
+        }
+
+        // 通常の新規予約
         if (turnManager.AddPlayerAction(actionType))
         {
             RefreshUI();
