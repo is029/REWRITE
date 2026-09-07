@@ -5,7 +5,7 @@ using System;
 
 public class TurnManager : MonoBehaviour
 {
-    public static TurnManager instance;
+    public static TurnManager Instance;
 
     private List<BattleAction> playerActions =
         new List<BattleAction>();

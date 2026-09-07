@@ -41,7 +41,7 @@ public class BattleSimulator : MonoBehaviour
         List<BattleSimulationState> states =
             new List<BattleSimulationState>();
 
-        int actionPerTurn = TurnManager.instance.GetActionsPerTurn();
+        int actionPerTurn = TurnManager.Instance.GetActionsPerTurn();
         if (enemyActions == null ||
             enemyActions.Count < actionPerTurn)
         {
@@ -839,7 +839,7 @@ public class BattleSimulator : MonoBehaviour
         List<int> predictedSpeeds =
             new List<int>();
 
-        int actionPerTurn = TurnManager.instance.GetActionsPerTurn();
+        int actionPerTurn = TurnManager.Instance.GetActionsPerTurn();
 
         if (enemyActions == null ||
             enemyActions.Count <
