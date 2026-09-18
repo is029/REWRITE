@@ -7,10 +7,22 @@ public class BattleUnit : MonoBehaviour
     [Header("Character")]
     [SerializeField] private CharacterData characterData;
 
+    [Header("アニメーション")]
+    private Animator animator;
+
     private int currentHP;
 
     private bool isDead = false;
     [SerializeField] private bool isPlayer;
+
+    [SerializeField] private int defendShield = 30;
+
+    // シールド最大値
+    [SerializeField] private int maxShield = 100;
+
+    public int Shield { get; private set; }
+
+    public int MaxShield => maxShield;
 
     // ========================================
     // 現在のBuff / Debuff
@@ -34,6 +46,13 @@ public class BattleUnit : MonoBehaviour
 
     private List<StatusEffect> statusEffects =
         new List<StatusEffect>();
+
+    // ========================================
+    // スキルクールタイム
+    // ========================================
+
+    private Dictionary<SkillData, int> skillCooldowns =
+        new Dictionary<SkillData, int>();
 
     public int MaxHP
     {
@@ -114,13 +133,15 @@ public class BattleUnit : MonoBehaviour
 
 
     public event Action<int, int> OnHPChanged;
-
+    public event Action<int, int> OnShieldChanged;
 
     // ========================================
     // 初期化
     // ========================================
     private void Awake()
     {
+        animator = GetComponent<Animator>();
+
         // プレイヤーだけ選択したキャラクターを使用
         if (isPlayer)
         {
@@ -143,7 +164,10 @@ public class BattleUnit : MonoBehaviour
             return;
         }
 
+        ApplyAnimatorController();
+
         currentHP = characterData.maxHP;
+
     }
 
 
@@ -184,55 +208,69 @@ public class BattleUnit : MonoBehaviour
     // ========================================
     // ダメージ
     // ========================================
-
     public void TakeDamage(int damage)
     {
-        if(IsDead)
+        // アニメーション
+        PlayHitAnimation();
+
+        // まずシールドで受ける
+        if (Shield > 0)
         {
-            return;
+            int shieldDamage = Mathf.Min(Shield, damage);
+
+            Shield -= shieldDamage;
+            damage -= shieldDamage;
+
+            Debug.Log(
+                UnitName +
+                " のシールドが " +
+                shieldDamage +
+                " 減った！"
+            );
         }
 
-        damage =
-            Mathf.Max(
-                0,
-                damage
-            );
-
-        currentHP -= damage;
-
-        currentHP =
-            Mathf.Max(
-                0,
-                currentHP
-            );
-
-        Debug.Log(
-            UnitName +
-            " が " +
-            damage +
-            " ダメージを受けた！" +
-            " HP：" +
-            currentHP +
-            "/" +
-            MaxHP
-        );
-
-        OnHPChanged?.Invoke(
-            currentHP,
-            MaxHP
-        );
-
-        if (isPlayer &&
-            RoguelikeManager.Instance != null)
+        // 残ったダメージをHPへ
+        if (damage > 0)
         {
-            RoguelikeManager.Instance.PlayerData.currentHP =
-                currentHP;
+            currentHP -= damage;
         }
 
+        currentHP = Mathf.Max(currentHP, 0);
+
+        OnHPChanged?.Invoke(currentHP, MaxHP);
+        OnShieldChanged?.Invoke(Shield, MaxShield);
+
+        CheckDead();
+    }
+
+    private void CheckDead()
+    {
         if (currentHP <= 0)
         {
             Die();
         }
+    }
+
+    public void Defend()
+    {
+        Shield += defendShield;
+
+        Shield = Mathf.Min(Shield, MaxShield);
+
+        Debug.Log(
+            UnitName +
+            " は防御！ シールド +" +
+            defendShield +
+            " / Shield：" +
+            Shield +
+            "/" +
+            MaxShield
+        );
+
+        OnShieldChanged?.Invoke(
+            Shield,
+            MaxShield
+        );
     }
 
     // ========================================
@@ -400,8 +438,12 @@ public class BattleUnit : MonoBehaviour
         // ========================================
         // 状態異常ダメージ
         // ========================================
-
         ProcessStatusEffects();
+
+        // ========================================
+        // スキルクールタイム
+        // ========================================
+        ReduceSkillCooldowns();
     }
 
 
@@ -437,18 +479,17 @@ public class BattleUnit : MonoBehaviour
 
         isDead = true;
 
-        Debug.Log(
-            "================================"
-        );
+        // アニメーション
+        PlayDeathAnimation();
 
-        Debug.Log(
-            UnitName +
-            " は倒れた！"
-        );
+        // ========================================
+        // BattleManagerに死亡を通知
+        // ========================================
 
-        Debug.Log(
-            "================================"
-        );
+        if (BattleManager.Instance != null)
+        {
+            BattleManager.Instance.CheckBattleResultFromUnit();
+        }
     }
 
     public void AddStatusEffect(
@@ -658,5 +699,190 @@ public class BattleUnit : MonoBehaviour
         statusEffects.RemoveAll(
             x => x.type == type
         );
+    }
+
+    // ========================================
+    // スキルクールタイム
+    // ========================================
+
+    public bool IsSkillAvailable(SkillData skill)
+    {
+        if (skill == null)
+            return false;
+
+        if (!skillCooldowns.ContainsKey(skill))
+            return true;
+
+        return skillCooldowns[skill] <= 0;
+    }
+
+    public int GetSkillCooldown(SkillData skill)
+    {
+        if (skill == null)
+            return 0;
+
+        if (!skillCooldowns.ContainsKey(skill))
+            return 0;
+
+        return skillCooldowns[skill];
+    }
+
+    public void StartSkillCooldown(SkillData skill)
+    {
+        if (skill == null)
+            return;
+
+        if (skill.cooldown <= 0)
+            return;
+
+        skillCooldowns[skill] = skill.cooldown;
+
+        Debug.Log(
+            UnitName +
+            " のスキル「" +
+            skill.skillName +
+            "」クールタイム開始：" +
+            skill.cooldown
+        );
+    }
+
+    private void ReduceSkillCooldowns()
+    {
+        List<SkillData> skills =
+            new List<SkillData>(skillCooldowns.Keys);
+
+        foreach (SkillData skill in skills)
+        {
+            skillCooldowns[skill]--;
+
+            if (skillCooldowns[skill] <= 0)
+            {
+                skillCooldowns[skill] = 0;
+
+                Debug.Log(
+                    UnitName +
+                    " のスキル「" +
+                    skill.skillName +
+                    "」が使用可能になりました。"
+                );
+            }
+        }
+    }
+
+    public void SetCharacterData(CharacterData data)
+    {
+        characterData = data;
+
+        currentHP = characterData.maxHP;
+        isDead = false;
+
+        // キャラクターデータからキャラクター固有のAnimatorControllerを設定
+        if(animator != null && characterData.animatorController != null)
+        {
+            // キャラクター固有のAnimator Controllerを設定
+            ApplyAnimatorController();
+        }
+
+        OnHPChanged?.Invoke(
+            currentHP,
+            characterData.maxHP
+        );
+    }
+
+    private void ApplyAnimatorController()
+    {
+        if (animator == null)
+        {
+            Debug.LogWarning(
+                UnitName +
+                " にAnimatorがありません。"
+            );
+
+            return;
+        }
+
+        if (characterData == null)
+        {
+            Debug.LogWarning(
+                "CharacterDataがありません。"
+            );
+
+            return;
+        }
+
+        if (characterData.animatorController == null)
+        {
+            Debug.LogWarning(
+                UnitName +
+                " のAnimator ControllerがCharacterDataに設定されていません。"
+            );
+
+            return;
+        }
+
+        animator.runtimeAnimatorController =
+            characterData.animatorController;
+
+        Debug.Log(
+            "===== ANIMATOR CONTROLLER SET =====\n" +
+            "Character : " +
+            characterData.characterName +
+            "\nController : " +
+            characterData.animatorController.name
+        );
+    }
+
+    // ========================================
+    // アニメーション関係
+    // ========================================
+    public void PlayAttackAnimation()
+    {
+        if (animator == null)
+            return;
+
+        animator.SetTrigger("Attack");
+    }
+
+    public void PlayDefendAnimation()
+    {
+        if (animator == null)
+            return;
+
+        animator.SetTrigger("Defend");
+    }
+
+    public void PlayHealAnimation()
+    {
+        if (animator == null)
+            return;
+
+        animator.SetTrigger("Heal");
+    }
+
+    public void PlaySkillAnimation(SkillData skill)
+    {
+        if (animator == null || skill == null)
+            return;
+
+        if (string.IsNullOrEmpty(skill.animationTrigger))
+            return;
+
+        animator.SetTrigger(skill.animationTrigger);
+    }
+
+    public void PlayHitAnimation()
+    {
+        if (animator == null)
+            return;
+
+        animator.SetTrigger("Hit");
+    }
+
+    public void PlayDeathAnimation()
+    {
+        if (animator == null)
+            return;
+
+        animator.SetTrigger("Death");
     }
 }

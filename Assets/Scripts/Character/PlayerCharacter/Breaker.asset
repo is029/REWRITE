@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d69843697115934458358a53c36be84d, type: 3}
+  m_Name: Breaker
+  m_EditorClassIdentifier: 
+  characterName: Breaker
+  description: 
+  maxHP: 130
+  attackPower: 30
+  normalAttackSpeed: 3
+  skill1: {fileID: 11400000, guid: 43e31665a1455be478b8842776ea0788, type: 2}
+  skill2: {fileID: 11400000, guid: 6655edf7f6ec25845ac6e48894aefd4d, type: 2}
+  skill3: {fileID: 11400000, guid: de17e07c6428acd4da233738fee9d47a, type: 2}
+  battleSprite: {fileID: 4506384450260293336, guid: b98983ea17c4acc408bcba473314744e, type: 3}
+  battleImageSize: {x: 300, y: 300}
+  animatorController: {fileID: 9100000, guid: 4b25a9a17f1e7124b88d632055ccdd30, type: 2}
+  skill1Weight: 33
+  skill2Weight: 33
+  skill3Weight: 34
+  attackWeight: 60
+  defendWeight: 20
+  healWeight: 0
+  skillWeight: 20

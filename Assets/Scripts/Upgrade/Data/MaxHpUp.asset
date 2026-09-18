@@ -16,4 +16,4 @@ MonoBehaviour:
   description: "\u6700\u5927HP\u304C20\u4E0A\u6607\u3059\u308B"
   upgradeType: 2
   value: 20
-  price: 60
+  price: 40

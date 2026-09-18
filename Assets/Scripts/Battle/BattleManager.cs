@@ -14,6 +14,9 @@ public class BattleManager : MonoBehaviour
     [Header("Battle Settings")]
     [SerializeField] private bool isBossBattle = false;
 
+    [Header("Enemy Database")]
+    [SerializeField] private EnemyDatabase enemyDatabase;
+
     [Header("Units")]
     [SerializeField] private BattleUnit player;
     [SerializeField] private BattleUnit enemy;
@@ -43,6 +46,8 @@ public class BattleManager : MonoBehaviour
 
     private void Start()
     {
+        SetupRandomEnemy();
+
         StartTurn();
     }
 
@@ -80,17 +85,10 @@ public class BattleManager : MonoBehaviour
     // プレイヤー攻撃
     public void PlayerAttack(bool enemyDefending)
     {
+        // 攻撃アニメーション
+        player.PlayAttackAnimation();
+
         int damage = player.AttackPower;
-
-        if (enemyDefending)
-        {
-            damage /= 2;
-
-            Debug.Log(
-                "Enemyは防御中！" +
-                "ダメージ半減！"
-            );
-        }
 
         enemy.TakeDamage(damage);
 
@@ -111,9 +109,7 @@ public class BattleManager : MonoBehaviour
                 " のカウンター発動！"
             );
 
-            player.TakeDamage(
-                counterDamage
-            );
+            player.TakeDamage(counterDamage);
 
             enemy.ConsumeCounter();
 
@@ -141,21 +137,13 @@ public class BattleManager : MonoBehaviour
             " 発動！"
         );
 
+        Player.PlaySkillAnimation(skill);
+
         switch (skill.effectType)
         {
             case SkillEffectType.Damage:
 
                 int damage = skill.power;
-
-                if (enemyDefending)
-                {
-                    damage /= 2;
-
-                    Debug.Log(
-                        "Enemyは防御中！" +
-                        "スキルダメージ半減！"
-                    );
-                }
 
                 enemy.TakeDamage(damage);
                 CheckBattleResult();
@@ -164,6 +152,8 @@ public class BattleManager : MonoBehaviour
 
 
             case SkillEffectType.Heal:
+
+                player.PlayHealAnimation();
 
                 player.Heal(skill.power);
 
@@ -197,15 +187,6 @@ public class BattleManager : MonoBehaviour
                     "Enemyの攻撃力が " +
                     skill.power +
                     " 下がった！"
-                );
-
-                break;
-
-
-            case SkillEffectType.DefenseDown:
-
-                Debug.Log(
-                    "Enemyの防御力を低下！"
                 );
 
                 break;
@@ -260,8 +241,10 @@ public class BattleManager : MonoBehaviour
             case SkillEffectType.Rewrite:
 
                 Debug.Log(
-                    "未来を書き換える！"
+                    "===== RULE REWRITE ====="
                 );
+
+                RuleManager.Instance.SetPlayerActionsPerTurn(4);
 
                 break;
 
@@ -294,17 +277,10 @@ public class BattleManager : MonoBehaviour
     // 敵攻撃
     public void EnemyAttack(bool playerDefending)
     {
+        // 攻撃アニメーション
+        enemy.PlayAttackAnimation();
+
         int damage = enemy.AttackPower;
-
-        if (playerDefending)
-        {
-            damage /= 2;
-
-            Debug.Log(
-                "Playerは防御中！" +
-                "ダメージ半減！"
-            );
-        }
 
         player.TakeDamage(damage);
 
@@ -314,11 +290,9 @@ public class BattleManager : MonoBehaviour
     // 敵回復
     public void EnemyHeal()
     {
-        enemy.Heal(15);
+        enemy.PlayHealAnimation();
 
-        Debug.Log(
-            "Enemy が15回復した！"
-        );
+        enemy.Heal(15);
     }
 
     // 敵スキル
@@ -438,16 +412,6 @@ public class BattleManager : MonoBehaviour
 
                 break;
 
-
-            case SkillEffectType.DefenseDown:
-
-                Debug.Log(
-                    "Playerの防御力を低下！"
-                );
-
-                break;
-
-
             case SkillEffectType.Counter:
 
                 enemy.AddStatusEffect(
@@ -500,8 +464,10 @@ public class BattleManager : MonoBehaviour
             case SkillEffectType.Rewrite:
 
                 Debug.Log(
-                    "===== BOSS REWRITE ====="
+                    "===== RULE REWRITE ====="
                 );
+
+                RuleManager.Instance.SetEnemyActionsPerTurn(4);
 
                 break;
 
@@ -538,10 +504,9 @@ public class BattleManager : MonoBehaviour
 
             case ActionType.Defend:
 
-                Debug.Log(
-                    "Enemy：防御！ SPEED " +
-                    action.speed
-                );
+                Enemy.PlayDefendAnimation();
+
+                Enemy.Defend();
 
                 break;
 
@@ -554,6 +519,8 @@ public class BattleManager : MonoBehaviour
                     action.speed
                 );
 
+                Enemy.PlaySkillAnimation(action.skillData);
+
                 ExecuteEnemySkill(
                     action.skillData,
                     playerDefending
@@ -563,15 +530,16 @@ public class BattleManager : MonoBehaviour
 
             case ActionType.Heal:
 
-                Debug.Log(
-                    "Enemy：回復！ SPEED " +
-                    action.speed
-                );
 
                 EnemyHeal();
 
                 break;
         }
+    }
+
+    public void CheckBattleResultFromUnit()
+    {
+        CheckBattleResult();
     }
 
     // 勝利判定
@@ -633,5 +601,104 @@ public class BattleManager : MonoBehaviour
 
             return;
         }
+    }
+
+    private void SetupRandomEnemy()
+    {
+        if (enemyDatabase == null)
+        {
+            Debug.LogError(
+                "EnemyDatabaseが設定されていません。"
+            );
+            return;
+        }
+
+        if (enemy == null)
+        {
+            Debug.LogError(
+                "EnemyのBattleUnitが設定されていません。"
+            );
+            return;
+        }
+
+        CharacterData selectedEnemy = null;
+
+        // MapManagerがある場合
+        if (MapManager.Instance != null)
+        {
+            MapNodeType battleType =
+                MapManager.Instance.GetCurrentBattleType();
+
+            switch (battleType)
+            {
+                case MapNodeType.Battle:
+
+                    selectedEnemy =
+                        enemyDatabase.GetRandomNormalEnemy();
+
+                    Debug.Log(
+                        "ランク：通常敵"
+                    );
+
+                    break;
+
+
+                case MapNodeType.Elite:
+
+                    selectedEnemy =
+                        enemyDatabase.GetRandomEliteEnemy();
+
+                    Debug.Log(
+                        "ランク：エリート敵"
+                    );
+
+                    break;
+
+
+                case MapNodeType.Boss:
+
+                    selectedEnemy =
+                        enemyDatabase.GetRandomBossEnemy();
+
+                    Debug.Log(
+                        "ランク：ボス"
+                    );
+
+                    break;
+            }
+        }
+
+        // BossBattleSceneを直接起動した場合の保険
+        if (selectedEnemy == null && isBossBattle)
+        {
+            selectedEnemy =
+                enemyDatabase.GetRandomBossEnemy();
+
+            Debug.Log(
+                "BossBattleSceneなのでボスから選択"
+            );
+        }
+
+        if (selectedEnemy == null)
+        {
+            Debug.LogError(
+                "敵キャラクターを取得できませんでした。"
+            );
+            return;
+        }
+
+        enemy.SetCharacterData(selectedEnemy);
+
+        // 敵AIにも選ばれたキャラクターを渡す
+        if (enemyAI != null)
+        {
+            enemyAI.SetCharacterData(selectedEnemy);
+        }
+
+        Debug.Log(
+            "===== RANDOM ENEMY SELECTED =====\n" +
+            "Character : " +
+            selectedEnemy.characterName
+        );
     }
 }

@@ -22,6 +22,13 @@ public class SkillData : ScriptableObject
 
     [Header("追加設定")]
     public int duration = 1;
+
+    [Header("クールタイム")]
+    [Min(0)]
+    public int cooldown = 0;
+
+    [Header("アニメーション")]
+    public string animationTrigger = "Skill";
 }
 
 public enum SkillEffectType
@@ -36,8 +43,6 @@ public enum SkillEffectType
 
     AttackUp,
     AttackDown,
-
-    DefenseDown,
 
     Counter,
     Rewrite,

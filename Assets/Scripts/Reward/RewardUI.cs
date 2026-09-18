@@ -11,14 +11,6 @@ public class RewardUI : MonoBehaviour
     [SerializeField] private Button coinButton;
     [SerializeField] private Button itemButton;
 
-    [Header("Reward Names")]
-    [SerializeField] private TMP_Text coinNameText;
-    [SerializeField] private TMP_Text itemNameText;
-
-    [Header("Reward Descriptions")]
-    [SerializeField] private TMP_Text coinDescriptionText;
-    [SerializeField] private TMP_Text itemDescriptionText;
-
     [Header("現在の所持コイン")]
     [SerializeField] private TMP_Text currentCoinText;
 
@@ -48,21 +40,9 @@ public class RewardUI : MonoBehaviour
 
         // コイン報酬
         coinButton.gameObject.SetActive(true);
-
-        coinNameText.text =
-            "コイン";
-
-        coinDescriptionText.text =
-            "追加でコインを獲得する";
-
+                
         // アイテム報酬
         itemButton.gameObject.SetActive(true);
-
-        itemNameText.text =
-            "ランダムアイテム";
-
-        itemDescriptionText.text =
-            "ランダムなアイテムを1個獲得する";
 
         // ボタンイベント
         coinButton.onClick.RemoveAllListeners();

@@ -19,10 +19,15 @@ public class BattleUIManager : MonoBehaviour
     [SerializeField] private TMP_Text action1Text;
     [SerializeField] private TMP_Text action2Text;
     [SerializeField] private TMP_Text action3Text;
+    [SerializeField] private TMP_Text action4Text;
 
     [Header("HP")]
     [SerializeField] private HPBarUI playerHPBar;
     [SerializeField] private HPBarUI enemyHPBar;
+
+    [Header("Shield")]
+    [SerializeField] private TMP_Text playerShieldText;
+    [SerializeField] private TMP_Text enemyShieldText;
 
     [SerializeField]
     private SkillUIManager skillUIManager;
@@ -41,7 +46,6 @@ public class BattleUIManager : MonoBehaviour
         skillButton.onClick.AddListener(OnSkillButton);
         executeButton.onClick.AddListener(OnExecuteButton);
 
-        // í«â¡
         clearButton.onClick.AddListener(OnClearButton);
 
         BattleUnit player = BattleManager.Instance.Player;
@@ -49,6 +53,9 @@ public class BattleUIManager : MonoBehaviour
 
         player.OnHPChanged += UpdatePlayerHP;
         enemy.OnHPChanged += UpdateEnemyHP;
+
+        player.OnShieldChanged += UpdatePlayerShield;
+        enemy.OnShieldChanged += UpdateEnemyShield;
 
         UpdatePlayerHP(
             player.CurrentHP,
@@ -58,6 +65,16 @@ public class BattleUIManager : MonoBehaviour
         UpdateEnemyHP(
             enemy.CurrentHP,
             enemy.MaxHP
+        );
+
+        UpdatePlayerShield(
+            player.Shield,
+            player.MaxShield
+        );
+
+        UpdateEnemyShield(
+            enemy.Shield,
+            enemy.MaxShield
         );
 
         RefreshUI();
@@ -109,6 +126,9 @@ public class BattleUIManager : MonoBehaviour
             {
                 enemy.OnHPChanged -= UpdateEnemyHP;
             }
+
+            player.OnShieldChanged -= UpdatePlayerShield;
+            enemy.OnShieldChanged -= UpdateEnemyShield;
         }
     }
 
@@ -187,10 +207,18 @@ public class BattleUIManager : MonoBehaviour
         int count =
             turnManager.CurrentActionIndex;
 
+        int actionsPerTurn =
+            turnManager.GetActionsPerTurn();
+
+        if(action4Text != null)
+        {
+            action4Text.gameObject.SetActive(actionsPerTurn >= 4);
+        }
+
         actionCountText.text =
-            "çsìÆ " +
             count +
-            " / 3";
+            " / " +
+            actionsPerTurn;
 
         UpdateActionText();
 
@@ -199,13 +227,14 @@ public class BattleUIManager : MonoBehaviour
 
     private void UpdateActionText()
     {
-        var actions = turnManager.GetPlayerActions();
+        var actions =
+            turnManager.GetPlayerActions();
 
         if (actions.Count > 0)
         {
             action1Text.text =
                 "á@ " +
-                GetActionName(actions[0].actionType) +
+                GetActionName(actions[0]) +
                 "\nSPEED " +
                 actions[0].speed;
         }
@@ -218,7 +247,7 @@ public class BattleUIManager : MonoBehaviour
         {
             action2Text.text =
                 "áA " +
-                GetActionName(actions[1].actionType) +
+                GetActionName(actions[1]) +
                 "\nSPEED " +
                 actions[1].speed;
         }
@@ -231,7 +260,7 @@ public class BattleUIManager : MonoBehaviour
         {
             action3Text.text =
                 "áB " +
-                GetActionName(actions[2].actionType) +
+                GetActionName(actions[2]) +
                 "\nSPEED " +
                 actions[2].speed;
         }
@@ -239,11 +268,30 @@ public class BattleUIManager : MonoBehaviour
         {
             action3Text.text = "áB ---";
         }
+
+        // áC
+        if (actions.Count > 3)
+        {
+            action4Text.text =
+                "áC " +
+                GetActionName(actions[3]) +
+                "\nSPEED " +
+                actions[3].speed;
+        }
+        else
+        {
+            action4Text.text = "áC ---";
+        }
     }
 
-    private string GetActionName(ActionType type)
+    private string GetActionName(BattleAction action)
     {
-        switch (type)
+        if (action == null)
+        {
+            return "---";
+        }
+
+        switch (action.actionType)
         {
             case ActionType.Attack:
                 return "çUåÇ";
@@ -252,6 +300,12 @@ public class BattleUIManager : MonoBehaviour
                 return "ñhå‰";
 
             case ActionType.Skill:
+
+                if (action.skillData != null)
+                {
+                    return action.skillData.skillName;
+                }
+
                 return "ÉXÉLÉã";
 
             default:
@@ -261,14 +315,25 @@ public class BattleUIManager : MonoBehaviour
 
     private void UpdateButtons()
     {
-        bool canSelect = turnManager.CurrentActionIndex < 3;
+        int actionsPerTurn =
+            turnManager.GetActionsPerTurn();
 
-        attackButton.interactable = canSelect;
-        defendButton.interactable = canSelect;
-        skillButton.interactable = canSelect;
+        bool canSelect =
+            turnManager.CurrentActionIndex <
+            actionsPerTurn;
+
+        attackButton.interactable =
+            canSelect;
+
+        defendButton.interactable =
+            canSelect;
+
+        skillButton.interactable =
+            canSelect;
 
         executeButton.interactable =
-            turnManager.CurrentActionIndex == 3;
+            turnManager.CurrentActionIndex ==
+            actionsPerTurn;
     }
 
     private void SetActionButtonsInteractable(bool value)
@@ -286,5 +351,27 @@ public class BattleUIManager : MonoBehaviour
     private void UpdateEnemyHP(int currentHP, int maxHP)
     {
         enemyHPBar.SetHP(currentHP, maxHP);
+    }
+
+    private void UpdatePlayerShield(int shield, int maxShield)
+    {
+        if (playerShieldText == null)
+        {
+            return;
+        }
+
+        playerShieldText.text =
+            shield.ToString();
+    }
+
+    private void UpdateEnemyShield(int shield, int maxShield)
+    {
+        if (enemyShieldText == null)
+        {
+            return;
+        }
+
+        enemyShieldText.text =
+            shield.ToString();
     }
 }

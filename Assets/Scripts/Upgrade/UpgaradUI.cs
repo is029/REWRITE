@@ -9,7 +9,6 @@ public class UpgradeUI : MonoBehaviour
 
     [Header("è§ïi")]
     [SerializeField] private Button[] upgradeButtons;
-    [SerializeField] private TMP_Text[] upgradeNameTexts;
     [SerializeField] private TMP_Text[] upgradeDescriptionTexts;
     [SerializeField] private TMP_Text[] upgradePriceTexts;
 
@@ -56,9 +55,6 @@ public class UpgradeUI : MonoBehaviour
                 upgradeButtons[i]
                     .gameObject
                     .SetActive(true);
-
-                upgradeNameTexts[i].text =
-                    upgrades[i].upgradeName;
 
                 upgradeDescriptionTexts[i].text =
                     upgrades[i].description;

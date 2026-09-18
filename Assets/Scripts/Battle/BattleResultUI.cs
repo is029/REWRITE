@@ -78,13 +78,16 @@ public class BattleResultUI : MonoBehaviour
                 break;
 
             case RoguelikeManager.StageType.Upgrade:
-                Debug.Log("強化画面へ");
-                SceneManager.LoadScene("UpgradeScene");
+                MapManager.Instance.ReturnToMap();
                 break;
 
             case RoguelikeManager.StageType.Boss:
-                Debug.Log("ボス戦へ");
-                SceneManager.LoadScene("BossBattleScene");
+                MapManager.Instance.ReturnToMap();
+                break;
+
+            case RoguelikeManager.StageType.Clear:
+                Debug.Log("クリア画面へ");
+                SceneManager.LoadScene("ClearScene");
                 break;
         }
     }

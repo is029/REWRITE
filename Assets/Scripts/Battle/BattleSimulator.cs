@@ -33,26 +33,38 @@ public class BattleSimulator : MonoBehaviour
     // ========================================
     // 3行動分を未来シミュレーション
     // ========================================
-
     public List<BattleSimulationState> SimulateTurn(
-        List<BattleAction> playerActions,
-        List<BattleAction> enemyActions)
+     List<BattleAction> playerActions,
+     List<BattleAction> enemyActions)
     {
         List<BattleSimulationState> states =
             new List<BattleSimulationState>();
 
-        int actionPerTurn = TurnManager.Instance.GetActionsPerTurn();
+        // ========================================
+        // 敵行動がない場合
+        // ========================================
         if (enemyActions == null ||
-            enemyActions.Count < actionPerTurn)
+            enemyActions.Count == 0)
         {
+            Debug.LogWarning(
+                "BattleSimulator：敵の行動がありません。"
+            );
+
             return states;
         }
 
+        // 敵の行動数を基準にする
+        int actionPerTurn = enemyActions.Count;
+
+        // ========================================
+        // 初期状態
+        // ========================================
         BattleSimulationState currentState =
             CreateInitialState();
 
-
-        // ① → ② → ③
+        // ========================================
+        // 1～3（または4）行動をシミュレート
+        // ========================================
         for (int i = 0; i < actionPerTurn; i++)
         {
             BattleAction playerAction = null;
@@ -66,14 +78,18 @@ public class BattleSimulator : MonoBehaviour
             BattleAction enemyAction =
                 enemyActions[i];
 
-
-            // =================================
-            // すでにどちらかが死亡している
-            // =================================
-
+            // ====================================
+            // すでにどちらかが死亡している場合
+            // ====================================
             if (currentState.playerHP <= 0 ||
                 currentState.enemyHP <= 0)
             {
+                currentState.playerHP =
+                    Mathf.Max(0, currentState.playerHP);
+
+                currentState.enemyHP =
+                    Mathf.Max(0, currentState.enemyHP);
+
                 states.Add(
                     currentState.Clone()
                 );
@@ -81,11 +97,9 @@ public class BattleSimulator : MonoBehaviour
                 continue;
             }
 
-
-            // =================================
-            // この番号の防御状態
-            // =================================
-
+            // ====================================
+            // 防御状態
+            // ====================================
             currentState.playerDefending =
                 playerAction != null &&
                 playerAction.actionType ==
@@ -96,11 +110,9 @@ public class BattleSimulator : MonoBehaviour
                 enemyAction.actionType ==
                 ActionType.Defend;
 
-
-            // =================================
-            // Speed計算
-            // =================================
-
+            // ====================================
+            // SPEED計算
+            // ====================================
             int playerSpeed =
                 GetPlayerSpeed(
                     currentState,
@@ -113,36 +125,20 @@ public class BattleSimulator : MonoBehaviour
                     enemyAction
                 );
 
-
-            Debug.Log(
-                "[SIMULATION] ACTION " +
-                (i + 1)
-            );
-
-            Debug.Log(
-                "Player Speed : " +
-                playerSpeed
-            );
-
-            Debug.Log(
-                "Enemy Speed : " +
-                enemySpeed
-            );
-
-
-            // =================================
-            // Speed順に行動
-            // =================================
-
+            // ====================================
+            // SPEED比較
+            // ====================================
             if (playerSpeed > enemySpeed)
             {
+                // ------------------------------
+                // プレイヤーが先
+                // ------------------------------
                 SimulatePlayerAction(
                     currentState,
                     playerAction
                 );
 
-
-                // Playerの攻撃でEnemyが死亡
+                // プレイヤー攻撃で敵死亡
                 if (currentState.enemyHP <= 0)
                 {
                     currentState.enemyHP = 0;
@@ -154,21 +150,35 @@ public class BattleSimulator : MonoBehaviour
                     continue;
                 }
 
-
+                // ------------------------------
+                // 敵行動
+                // ------------------------------
                 SimulateEnemyAction(
                     currentState,
                     enemyAction
                 );
+
+                // ------------------------------
+                // 敵攻撃でプレイヤー死亡
+                // ------------------------------
+                if (currentState.playerHP <= 0)
+                {
+                    currentState.playerHP = 0;
+                }
             }
             else
             {
+                // ------------------------------
+                // 敵が先
+                // ------------------------------
                 SimulateEnemyAction(
                     currentState,
                     enemyAction
                 );
 
-
-                // Enemyの攻撃でPlayerが死亡
+                // ------------------------------
+                // 敵攻撃でプレイヤー死亡
+                // ------------------------------
                 if (currentState.playerHP <= 0)
                 {
                     currentState.playerHP = 0;
@@ -180,18 +190,26 @@ public class BattleSimulator : MonoBehaviour
                     continue;
                 }
 
-
+                // ------------------------------
+                // プレイヤー行動
+                // ------------------------------
                 SimulatePlayerAction(
                     currentState,
                     playerAction
                 );
+
+                // ------------------------------
+                // プレイヤー攻撃で敵死亡
+                // ------------------------------
+                if (currentState.enemyHP <= 0)
+                {
+                    currentState.enemyHP = 0;
+                }
             }
 
-
-            // =================================
+            // ====================================
             // HPを0未満にしない
-            // =================================
-
+            // ====================================
             currentState.playerHP =
                 Mathf.Max(
                     0,
@@ -204,21 +222,64 @@ public class BattleSimulator : MonoBehaviour
                     currentState.enemyHP
                 );
 
-
-            // =================================
-            // この番号終了時点の状態
-            // =================================
-
+            // ====================================
+            // この行動終了時の状態を保存
+            // ====================================
             states.Add(
                 currentState.Clone()
             );
         }
 
-        ProcessSimulationStatusEffects(currentState);
+        // ========================================
+        // ターン終了処理
+        // ========================================
+        //
+        // 実際のBattleUnitでは
+        //
+        // 1. バフ・デバフのターン減少
+        // 2. 毒・火傷などの状態異常処理
+        // 3. スキルクールダウン減少
+        //
+        // の順番
+        //
+        EndSimulationTurn(
+            currentState
+        );
+
+        // ========================================
+        // 毒・火傷などの持続ダメージ
+        // ========================================
+        ProcessSimulationStatusEffects(
+            currentState
+        );
+
+        // ========================================
+        // 最終HPを補正
+        // ========================================
+        currentState.playerHP =
+            Mathf.Max(
+                0,
+                currentState.playerHP
+            );
+
+        currentState.enemyHP =
+            Mathf.Max(
+                0,
+                currentState.enemyHP
+            );
+
+        // ========================================
+        // 最後の予測結果を
+        // DoT反映後の状態に更新
+        // ========================================
+        if (states.Count > 0)
+        {
+            states[states.Count - 1] =
+                currentState.Clone();
+        }
 
         return states;
     }
-
 
     // ========================================
     // Player Speed
@@ -575,11 +636,6 @@ public class BattleSimulator : MonoBehaviour
                 break;
 
 
-            case SkillEffectType.DefenseDown:
-
-                break;
-
-
             case SkillEffectType.Counter:
 
                 AddPlayerStatus(
@@ -715,118 +771,165 @@ public class BattleSimulator : MonoBehaviour
 
     private void ProcessSimulationStatusEffects(
     BattleSimulationState state)
+{
+    if (state == null)
+        return;
+
+    // ========================================
+    // プレイヤー
+    // ========================================
+
+    if (state.playerHP > 0)
     {
-        // =================================
-        // Enemy
-        // =================================
-
-        for (
-            int i = state.enemyStatusEffects.Count - 1;
-            i >= 0;
-            i--)
-        {
-            StatusEffect effect =
-                state.enemyStatusEffects[i];
-
-
-            switch (effect.type)
-            {
-                case StatusEffectType.Burn:
-
-                    state.enemyHP =
-                        Mathf.Max(
-                            0,
-                            state.enemyHP -
-                            effect.power
-                        );
-
-                    Debug.Log(
-                        "[SIM] Enemy Burn " +
-                        effect.power
-                    );
-
-                    break;
-
-
-                case StatusEffectType.Poison:
-
-                    state.enemyHP =
-                        Mathf.Max(
-                            0,
-                            state.enemyHP -
-                            effect.power
-                        );
-
-                    Debug.Log(
-                        "[SIM] Enemy Poison " +
-                        effect.power
-                    );
-
-                    break;
-            }
-
-
-            effect.remainingTurns--;
-
-
-            if (effect.remainingTurns <= 0)
-            {
-                state.enemyStatusEffects
-                    .RemoveAt(i);
-            }
-        }
-
-
-        // =================================
-        // Player
-        // =================================
-
-        for (
-            int i = state.playerStatusEffects.Count - 1;
+        for (int i = state.playerStatusEffects.Count - 1;
             i >= 0;
             i--)
         {
             StatusEffect effect =
                 state.playerStatusEffects[i];
 
+            if (effect == null)
+                continue;
 
-            switch (effect.type)
+            // ================================
+            // 火傷
+            // ================================
+
+            if (effect.type ==
+                StatusEffectType.Burn)
             {
-                case StatusEffectType.Burn:
+                state.playerHP -=
+                    effect.power;
 
-                    state.playerHP =
-                        Mathf.Max(
-                            0,
-                            state.playerHP -
-                            effect.power
-                        );
-
-                    break;
-
-
-                case StatusEffectType.Poison:
-
-                    state.playerHP =
-                        Mathf.Max(
-                            0,
-                            state.playerHP -
-                            effect.power
-                        );
-
-                    break;
+                Debug.Log(
+                    "Simulation：プレイヤーが火傷で " +
+                    effect.power +
+                    " ダメージ"
+                );
             }
 
+            // ================================
+            // 毒
+            // ================================
+
+            else if (effect.type ==
+                     StatusEffectType.Poison)
+            {
+                state.playerHP -=
+                    effect.power;
+
+                Debug.Log(
+                    "Simulation：プレイヤーが毒で " +
+                    effect.power +
+                    " ダメージ"
+                );
+            }
+
+            // ================================
+            // 残りターン減少
+            // ================================
 
             effect.remainingTurns--;
 
+            // ================================
+            // 効果終了
+            // ================================
 
             if (effect.remainingTurns <= 0)
             {
-                state.playerStatusEffects
-                    .RemoveAt(i);
+                state.playerStatusEffects.RemoveAt(i);
             }
         }
+
+        state.playerHP =
+            Mathf.Max(
+                0,
+                state.playerHP
+            );
     }
+    else
+    {
+        state.playerHP = 0;
+    }
+
+
+    // ========================================
+    // 敵
+    // ========================================
+
+    if (state.enemyHP > 0)
+    {
+        for (int i = state.enemyStatusEffects.Count - 1;
+            i >= 0;
+            i--)
+        {
+            StatusEffect effect =
+                state.enemyStatusEffects[i];
+
+            if (effect == null)
+                continue;
+
+            // ================================
+            // 火傷
+            // ================================
+
+            if (effect.type ==
+                StatusEffectType.Burn)
+            {
+                state.enemyHP -=
+                    effect.power;
+
+                Debug.Log(
+                    "Simulation：敵が火傷で " +
+                    effect.power +
+                    " ダメージ"
+                );
+            }
+
+            // ================================
+            // 毒
+            // ================================
+
+            else if (effect.type ==
+                     StatusEffectType.Poison)
+            {
+                state.enemyHP -=
+                    effect.power;
+
+                Debug.Log(
+                    "Simulation：敵が毒で " +
+                    effect.power +
+                    " ダメージ"
+                );
+            }
+
+            // ================================
+            // 残りターン減少
+            // ================================
+
+            effect.remainingTurns--;
+
+            // ================================
+            // 効果終了
+            // ================================
+
+            if (effect.remainingTurns <= 0)
+            {
+                state.enemyStatusEffects.RemoveAt(i);
+            }
+        }
+
+        state.enemyHP =
+            Mathf.Max(
+                0,
+                state.enemyHP
+            );
+    }
+    else
+    {
+        state.enemyHP = 0;
+    }
+}
 
     // ========================================
     // 敵未来Speedだけ取得

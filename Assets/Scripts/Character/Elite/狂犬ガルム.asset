@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d69843697115934458358a53c36be84d, type: 3}
+  m_Name: "\u72C2\u72AC\u30AC\u30EB\u30E0"
+  m_EditorClassIdentifier: 
+  characterName: "\u72C2\u72AC\u30AC\u30EB\u30E0"
+  description: 
+  maxHP: 180
+  attackPower: 22
+  normalAttackSpeed: 9
+  skill1: {fileID: 11400000, guid: 659ebb45891045c40afe4e05f7bb0e47, type: 2}
+  skill2: {fileID: 11400000, guid: cb532b963f4fc7f499de210013c9dfc7, type: 2}
+  skill3: {fileID: 0}
+  battleSprite: {fileID: -6733283336161650236, guid: 72cd0b9ed7c765b41a15c808015fe7e9, type: 3}
+  battleImageSize: {x: 300, y: 300}
+  animatorController: {fileID: 9100000, guid: c1bcde319d02da140a70d5f9e98f2ef2, type: 2}
+  skill1Weight: 45
+  skill2Weight: 55
+  skill3Weight: 0
+  attackWeight: 50
+  defendWeight: 20
+  healWeight: 0
+  skillWeight: 30

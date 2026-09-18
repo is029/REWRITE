@@ -6,13 +6,6 @@ public class RewardManager : MonoBehaviour
 {
     public static RewardManager Instance { get; private set; }
 
-    [Header("UI")]
-    [SerializeField] private Button coinButton;
-    [SerializeField] private Button itemButton;
-
-    [SerializeField] private TMP_Text coinText;
-    [SerializeField] private TMP_Text itemText;
-
     [Header("設定")]
     [SerializeField] private int bonusCoins = 50;
 
@@ -30,19 +23,6 @@ public class RewardManager : MonoBehaviour
         Instance = this;
     }
 
-    private void Start()
-    {
-        SetupUI();
-    }
-
-    private void SetupUI()
-    {
-        coinText.text =
-            "コイン +" + bonusCoins;
-
-        itemText.text =
-            "ランダムアイテム\n獲得";
-    }
 
     public void GetBonusCoins()
     {

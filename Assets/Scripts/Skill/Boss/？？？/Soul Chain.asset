@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4e889352ca29ee4d9eab4cef1e6c3d3, type: 3}
+  m_Name: Soul Chain
+  m_EditorClassIdentifier: 
+  skillName: "\u546A\u7E1B\u306E\u9396"
+  description: "\u9B42\u3092\u7E1B\u308B\u546A\u3044\u306E\u9396\u3092\u653E\u3061\u3001\n\u5BFE\u8C61\u306E\u884C\u52D5\u901F\u5EA6\u3092\u4F4E\u4E0B\u3055\u305B\u308B\u3002"
+  speed: 6
+  power: 2
+  effectType: 3
+  duration: 3
+  cooldown: 2
+  animationTrigger: Skill1

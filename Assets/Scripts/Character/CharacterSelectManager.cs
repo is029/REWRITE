@@ -79,6 +79,6 @@ public class CharacterSelectManager : MonoBehaviour
             character.characterName
         );
 
-        SceneManager.LoadScene("BattleScene");
+        SceneManager.LoadScene("MapScene");
     }
 }

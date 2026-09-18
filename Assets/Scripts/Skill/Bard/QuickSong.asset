@@ -18,3 +18,5 @@ MonoBehaviour:
   power: 3
   effectType: 4
   duration: 2
+  cooldown: 2
+  animationTrigger: Skill1

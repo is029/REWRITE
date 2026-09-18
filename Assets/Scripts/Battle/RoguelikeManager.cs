@@ -14,6 +14,7 @@ public class RoguelikeManager : MonoBehaviour
     {
         NormalBattle,
         CharacterSelect,
+        MapSelect,
         Reward,
         Upgrade,
         Boss,
@@ -30,7 +31,7 @@ public class RoguelikeManager : MonoBehaviour
     [SerializeField] private int slowClearBonus = 10;
 
     public int CurrentBattle { get; private set; } = 1;
-    public StageType CurrentStage { get; private set; }
+    public StageType CurrentStage { get;  set; }
 
     private void Awake()
     {
@@ -124,7 +125,7 @@ public class RoguelikeManager : MonoBehaviour
         // 3戦目？
         if (CurrentBattle >= normalBattleCount)
         {
-            StartUpgrade();
+            MapManager.Instance.ReturnToMap();
         }
         else
         {
@@ -167,11 +168,11 @@ public class RoguelikeManager : MonoBehaviour
         CurrentBattle++;
 
         Debug.Log(
-            "次の通常戦闘へ：" +
+            "マップ選択へ：" +
             CurrentBattle
         );
 
-        StartNormalBattle();
+        MapManager.Instance.ReturnToMap();
     }
 
     // 強化画面
@@ -180,12 +181,14 @@ public class RoguelikeManager : MonoBehaviour
         CurrentStage = StageType.Upgrade;
 
         Debug.Log("===== UPGRADE =====");
+
+        SceneManager.LoadScene("UpgradeScene");
     }
 
     // 強化完了
     public void UpgradeComplete()
     {
-        StartBoss();
+        MapManager.Instance.ReturnToMap();
     }
 
     // ボス戦
@@ -229,6 +232,5 @@ public class RoguelikeManager : MonoBehaviour
 
         Debug.Log("===== GAME CLEAR =====");
 
-        SceneManager.LoadScene("ClearScene");
     }
 }

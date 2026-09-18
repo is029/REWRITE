@@ -10,6 +10,9 @@ public class TurnManager : MonoBehaviour
     private List<BattleAction> playerActions =
         new List<BattleAction>();
 
+    [Header("アニメーション・行動間隔")]
+    [SerializeField] private float actionInterval = 0.8f;
+
     private int playerSpeedModifier = 0;
     private int enemySpeedModifier = 0;
 
@@ -24,6 +27,11 @@ public class TurnManager : MonoBehaviour
 
     public bool IsExecuting { get; private set; }
 
+    private void Awake()
+    {
+        Instance = this;
+    }
+
     public int GetActionsPerTurn()
     {
         if (RuleManager.Instance == null)
@@ -31,7 +39,17 @@ public class TurnManager : MonoBehaviour
             return 3;
         }
 
-        return RuleManager.Instance.CurrentActionsPerTurn;
+        return RuleManager.Instance.CurrentPlayerActionsPerTurn;
+    }
+
+    public int GetEnemyActionsPerTurn()
+    {
+        if (RuleManager.Instance == null)
+        {
+            return 3;
+        }
+
+        return RuleManager.Instance.CurrentEnemyActionsPerTurn;
     }
 
     // ========================================
@@ -102,6 +120,53 @@ public class TurnManager : MonoBehaviour
             return false;
         }
 
+        // このターンですでに同じスキルを予約しているか確認
+        foreach (BattleAction paction in playerActions)
+        {
+            if (paction.actionType == ActionType.Skill &&
+                paction.skillData == skill)
+            {
+                Debug.Log(
+                    "スキル「" + skill.skillName +
+                    "」はこのターンにすでに使用予約されています。"
+                );
+
+                return false;
+            }
+        }
+
+        // ========================================
+        // 1ターンにスキルは1回まで
+        // ========================================
+        foreach (BattleAction paction in playerActions)
+        {
+            if (paction.actionType == ActionType.Skill)
+            {
+                Debug.Log(
+                    "このターンはすでにスキルを使用予約しています。"
+                );
+
+                return false;
+            }
+        }
+
+        // クールタイム中なら使用不可
+        if (!BattleManager.Instance.Player.IsSkillAvailable(skill))
+        {
+            int cooldown =
+                BattleManager.Instance.Player.GetSkillCooldown(skill);
+
+            Debug.Log(
+                "スキル「" +
+                skill.skillName +
+                "」はクールタイム中です。残り：" +
+                cooldown +
+                "ターン"
+            );
+
+            return false;
+        }
+
         BattleAction action =
             new BattleAction(
                 ActionType.Skill,
@@ -131,7 +196,6 @@ public class TurnManager : MonoBehaviour
     // ========================================
     // 敵未来UI更新
     // ========================================
-
     private void RefreshEnemyFutureUI()
     {
         if (BattleManager.Instance == null)
@@ -222,62 +286,53 @@ public class TurnManager : MonoBehaviour
     // ========================================
     // ① → ② → ③を実行
     // ========================================
-
     private IEnumerator ExecuteActions()
     {
         IsExecuting = true;
 
         List<BattleAction> enemyActions =
-            BattleManager.Instance.EnemyAI
-            .GetEnemyActions();
+            BattleManager.Instance.EnemyAI.GetEnemyActions();
 
-        int actionPerTurn = GetActionsPerTurn();
+        int playerActionPerTurn = GetActionsPerTurn();
 
-        if (enemyActions == null ||
-            enemyActions.Count < actionPerTurn)
+        if (enemyActions == null)
         {
-            Debug.LogError(
-                "敵の行動が3つ作成されていません。"
-            );
-
+            Debug.LogError("敵の行動が作成されていません。");
             IsExecuting = false;
-
             yield break;
         }
 
-        playerSpeedModifier = 0;
-        enemySpeedModifier = 0;
-
-
-        // ====================================
-        // ① → ② → ③
-        // ====================================
-
-        for (int i = 0; i < actionPerTurn; i++)
+        for (int i = 0; i < playerActionPerTurn; i++)
         {
-            if (
-                BattleManager.Instance.Player.IsDead ||
-                BattleManager.Instance.Enemy.IsDead
-)
+            // 戦闘終了チェック
+            if (BattleManager.Instance.Player.IsDead ||
+                BattleManager.Instance.Enemy.IsDead)
             {
                 yield break;
             }
 
-            BattleAction playerAction =
-                playerActions[i];
+            // プレイヤーの行動数チェック
+            if (i >= playerActions.Count)
+            {
+                Debug.LogError(
+                    "プレイヤーの行動数が不足しています。" +
+                    " 必要：" + playerActionPerTurn +
+                    " / 実際：" + playerActions.Count
+                );
 
-            BattleAction enemyAction =
-                enemyActions[i];
+                IsExecuting = false;
+                yield break;
+            }
 
+            BattleAction playerAction = playerActions[i];
 
-            int playerSpeed =
-                playerAction.speed +
-                playerSpeedModifier;
+            // 敵の行動
+            BattleAction enemyAction = null;
 
-            int enemySpeed =
-                enemyAction.speed +
-                enemySpeedModifier;
-
+            if (i < enemyActions.Count)
+            {
+                enemyAction = enemyActions[i];
+            }
 
             Debug.Log(
                 "========== ACTION " +
@@ -285,87 +340,152 @@ public class TurnManager : MonoBehaviour
                 " =========="
             );
 
+            // ========================================
+            // 敵の行動がない場合
+            // ========================================
+
+            if (enemyAction == null)
+            {
+                Debug.Log(
+                    "Player : " +
+                    playerAction.actionType +
+                    " / SPEED " +
+                    playerAction.speed
+                );
+
+                Debug.Log("Enemy : ---");
+
+                // プレイヤー行動
+                yield return ExecutePlayerAction(
+                    playerAction,
+                    false
+                );
+
+                // 行動間隔
+                yield return new WaitForSeconds(actionInterval);
+
+                if (BattleManager.Instance.Player.IsDead ||
+                    BattleManager.Instance.Enemy.IsDead)
+                {
+                    yield break;
+                }
+
+                continue;
+            }
+
+            // ========================================
+            // 通常の1対1行動
+            // ========================================
+
             Debug.Log(
                 "Player : " +
                 playerAction.actionType +
                 " / SPEED " +
-                playerSpeed
+                playerAction.speed
             );
 
             Debug.Log(
                 "Enemy : " +
                 enemyAction.actionType +
                 " / SPEED " +
-                enemySpeed
+                enemyAction.speed
             );
 
-
-            // =================================
-            // この番号だけの防御状態
-            // =================================
+            bool enemyDefending =
+                enemyAction.actionType == ActionType.Defend;
 
             bool playerDefending =
-                playerAction.actionType ==
-                ActionType.Defend;
+                playerAction.actionType == ActionType.Defend;
 
-            bool enemyDefending =
-                enemyAction.actionType ==
-                ActionType.Defend;
+            // ========================================
+            // プレイヤーの方が速い
+            // ========================================
 
-
-            // =================================
-            // Speed比較
-            // =================================
-
-            if (playerSpeed > enemySpeed)
+            if (playerAction.speed > enemyAction.speed)
             {
-                // Playerが先
-                ExecutePlayerAction(
+                yield return ExecutePlayerAction(
                     playerAction,
                     enemyDefending
                 );
 
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(actionInterval);
 
+                if (BattleManager.Instance.Player.IsDead ||
+                    BattleManager.Instance.Enemy.IsDead)
+                {
+                    yield break;
+                }
 
-                // Enemy
-                BattleManager.Instance.ExecuteEnemyAction(
+                // 敵行動
+                yield return ExecuteEnemyActionWithDelay(
                     enemyAction,
                     playerDefending
                 );
             }
+
+            // ========================================
+            // 同速ならプレイヤー先攻
+            // ========================================
+
+            else if (playerAction.speed == enemyAction.speed)
+            {
+                yield return ExecutePlayerAction(
+                    playerAction,
+                    enemyDefending
+                );
+
+                yield return new WaitForSeconds(actionInterval);
+
+                if (BattleManager.Instance.Player.IsDead ||
+                    BattleManager.Instance.Enemy.IsDead)
+                {
+                    yield break;
+                }
+
+                // 敵行動
+                yield return ExecuteEnemyActionWithDelay(
+                    enemyAction,
+                    playerDefending
+                );
+            }
+
+            // ========================================
+            // 敵の方が速い
+            // ========================================
+
             else
             {
-                // Enemyが先
-                BattleManager.Instance.ExecuteEnemyAction(
+                yield return ExecuteEnemyActionWithDelay(
                     enemyAction,
                     playerDefending
                 );
 
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(actionInterval);
 
+                if (BattleManager.Instance.Player.IsDead ||
+                    BattleManager.Instance.Enemy.IsDead)
+                {
+                    yield break;
+                }
 
-                // Player
-                ExecutePlayerAction(
+                // プレイヤー行動
+                yield return ExecutePlayerAction(
                     playerAction,
                     enemyDefending
                 );
             }
 
-
-            yield return new WaitForSeconds(0.5f);
+            // 次の行動まで待つ
+            yield return new WaitForSeconds(actionInterval);
         }
-
 
         EndTurn();
     }
 
-
     // ========================================
     // Playerの行動
     // ========================================
-
-    private void ExecutePlayerAction(
+    private IEnumerator ExecutePlayerAction(
         BattleAction action,
         bool enemyDefending)
     {
@@ -392,6 +512,10 @@ public class TurnManager : MonoBehaviour
                     action.speed
                 );
 
+                BattleManager.Instance.Player.PlayDefendAnimation();
+
+                BattleManager.Instance.Player.Defend();
+
                 break;
 
 
@@ -413,15 +537,38 @@ public class TurnManager : MonoBehaviour
                     action.speed
                 );
 
+                // スキル専用アニメーション
+                BattleManager.Instance.Player.PlaySkillAnimation(
+                    action.skillData
+                );
+
                 BattleManager.Instance.ExecutePlayerSkill(
                     action.skillData,
                     enemyDefending
                 );
 
+                // スキル使用後にクールタイム開始
+                BattleManager.Instance.Player.StartSkillCooldown(
+                    action.skillData
+                );
+
                 break;
         }
+
+        yield return null;
     }
 
+    private IEnumerator ExecuteEnemyActionWithDelay(
+    BattleAction action,
+    bool playerDefending)
+    {
+        BattleManager.Instance.ExecuteEnemyAction(
+            action,
+            playerDefending
+        );
+
+        yield return null;
+    }
 
     // ========================================
     // Enemy / Player Speed変更

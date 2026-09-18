@@ -751,7 +751,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerCharacterData: {fileID: 11400000, guid: fed37861d25a66545aecae1b475f4541, type: 2}
-  normalBattleCount: 3
+  normalBattleCount: 5
   baseBattleCoins: 50
   fastClearBonus: 30
   mediumClearBonus: 20

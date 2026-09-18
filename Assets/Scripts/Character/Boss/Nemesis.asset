@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d69843697115934458358a53c36be84d, type: 3}
+  m_Name: Nemesis
+  m_EditorClassIdentifier: 
+  characterName: "\u30CD\u30E1\u30B7\u30B9"
+  description: "\u865A\u7121\u3092\u64CD\u308A\u3001\u4E16\u754C\u306E\u6CD5\u5247\u3059\u3089\u66F8\u304D\u63DB\u3048\u308B\u7570\u5F62\u3002\n\u305D\u306E\u5B58\u5728\u305D\u306E\u3082\u306E\u304C\u3001\u73FE\u5B9F\u306B\u5BFE\u3059\u308B\u30D0\u30B0\u3067\u3042\u308B\u3002"
+  maxHP: 500
+  attackPower: 35
+  normalAttackSpeed: 6
+  skill1: {fileID: 11400000, guid: 3ef8f8d75603a5a4b87e063ec33f81d3, type: 2}
+  skill2: {fileID: 11400000, guid: 3bc42dd9492fa274287d2541695271aa, type: 2}
+  skill3: {fileID: 11400000, guid: c3f28ce7cf79ac34eba51e1bb1ee5f5c, type: 2}
+  battleSprite: {fileID: 8515954382389553304, guid: 0e02c246734496a4b89a222533f4c3cf, type: 3}
+  battleImageSize: {x: 350, y: 350}
+  animatorController: {fileID: 9100000, guid: 3a6dfbeef91bfdb44a981bc46baf57ba, type: 2}
+  skill1Weight: 30
+  skill2Weight: 30
+  skill3Weight: 40
+  attackWeight: 40
+  defendWeight: 10
+  healWeight: 10
+  skillWeight: 40
