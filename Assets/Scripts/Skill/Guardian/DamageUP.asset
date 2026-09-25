@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b4e889352ca29ee4d9eab4cef1e6c3d3, type: 3}
-  m_Name: Protect
+  m_Name: DamageUP
   m_EditorClassIdentifier: 
-  skillName: "\u30D7\u30ED\u30C6\u30AF\u30C8"
-  description: "\u53D7\u3051\u308B\u30C0\u30E1\u30FC\u30B8\u3092\u8EFD\u6E1B\u3059\u308B"
+  skillName: "\u30C0\u30E1\u30FC\u30B8UP"
+  description: "\u30C0\u30E1\u30FC\u30B8\u30A2\u30C3\u30D7"
   speed: 8
-  power: 50
-  effectType: 0
-  duration: 1
-  cooldown: 2
+  power: 10
+  effectType: 5
+  duration: 2
+  cooldown: 4
   animationTrigger: Skill2

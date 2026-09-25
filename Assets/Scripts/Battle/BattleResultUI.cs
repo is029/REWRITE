@@ -61,6 +61,7 @@ public class BattleResultUI : MonoBehaviour
     {
         if (!string.IsNullOrEmpty(titleSceneName))
         {
+            RoguelikeManager.Instance.ResetRun();
             SceneManager.LoadScene(titleSceneName);
         }
     }

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class BattleManager : MonoBehaviour
@@ -85,9 +86,6 @@ public class BattleManager : MonoBehaviour
     // プレイヤー攻撃
     public void PlayerAttack(bool enemyDefending)
     {
-        // 攻撃アニメーション
-        player.PlayAttackAnimation();
-
         int damage = player.AttackPower;
 
         enemy.TakeDamage(damage);
@@ -137,8 +135,6 @@ public class BattleManager : MonoBehaviour
             " 発動！"
         );
 
-        Player.PlaySkillAnimation(skill);
-
         switch (skill.effectType)
         {
             case SkillEffectType.Damage:
@@ -152,8 +148,6 @@ public class BattleManager : MonoBehaviour
 
 
             case SkillEffectType.Heal:
-
-                player.PlayHealAnimation();
 
                 player.Heal(skill.power);
 
@@ -277,9 +271,6 @@ public class BattleManager : MonoBehaviour
     // 敵攻撃
     public void EnemyAttack(bool playerDefending)
     {
-        // 攻撃アニメーション
-        enemy.PlayAttackAnimation();
-
         int damage = enemy.AttackPower;
 
         player.TakeDamage(damage);
@@ -290,8 +281,6 @@ public class BattleManager : MonoBehaviour
     // 敵回復
     public void EnemyHeal()
     {
-        enemy.PlayHealAnimation();
-
         enemy.Heal(15);
     }
 
@@ -302,18 +291,8 @@ public class BattleManager : MonoBehaviour
     {
         if (skill == null)
         {
-            Debug.LogWarning(
-                "Enemy SkillDataがありません。"
-            );
-
             return;
         }
-
-        Debug.Log(
-            "Enemy：" +
-            skill.skillName +
-            " 発動！"
-        );
 
         switch (skill.effectType)
         {
@@ -486,53 +465,28 @@ public class BattleManager : MonoBehaviour
 
     // 敵行動
     public void ExecuteEnemyAction(
-        BattleAction action,
-        bool playerDefending)
+    BattleAction action,
+    bool playerDefending)
     {
         switch (action.actionType)
         {
             case ActionType.Attack:
-
-                Debug.Log(
-                    "Enemy：攻撃！ SPEED " +
-                    action.speed
-                );
-
                 EnemyAttack(playerDefending);
-
                 break;
 
             case ActionType.Defend:
-
-                Enemy.PlayDefendAnimation();
-
                 Enemy.Defend();
-
                 break;
 
             case ActionType.Skill:
-
-                Debug.Log(
-                    "Enemy：スキル！ " +
-                    action.skillData.skillName +
-                    " / SPEED " +
-                    action.speed
-                );
-
-                Enemy.PlaySkillAnimation(action.skillData);
-
                 ExecuteEnemySkill(
                     action.skillData,
                     playerDefending
                 );
-
                 break;
 
             case ActionType.Heal:
-
-
                 EnemyHeal();
-
                 break;
         }
     }
@@ -700,5 +654,126 @@ public class BattleManager : MonoBehaviour
             "Character : " +
             selectedEnemy.characterName
         );
+    }
+
+    private IEnumerator ExecuteActionWithDelay(
+    BattleAction action,
+    bool playerDefending,
+    bool enemyDefending)
+    {
+        if (action == null)
+            yield break;
+
+        // ====================================
+        // 行動開始
+        // ====================================
+
+        if (action.isPlayer)
+        {
+            // プレイヤー行動
+            switch (action.actionType)
+            {
+                case ActionType.Attack:
+
+                    player.PlayAttackAnimation();
+
+                    // 攻撃アニメーション
+                    yield return new WaitForSeconds(1f);
+
+                    PlayerAttack(enemyDefending);
+
+                    break;
+
+
+                case ActionType.Defend:
+
+                    player.PlayDefendAnimation();
+
+                    yield return new WaitForSeconds(1f);
+
+                    player.Defend();
+
+                    break;
+
+
+                case ActionType.Skill:
+
+                    player.PlaySkillAnimation(
+                        action.skillData
+                    );
+
+                    yield return new WaitForSeconds(1f);
+
+                    ExecutePlayerSkill(
+                        action.skillData,
+                        enemyDefending
+                    );
+
+                    break;
+            }
+        }
+        else
+        {
+            // ====================================
+            // 敵行動
+            // ====================================
+
+            switch (action.actionType)
+            {
+                case ActionType.Attack:
+
+                    enemy.PlayAttackAnimation();
+
+                    yield return new WaitForSeconds(1f);
+
+                    EnemyAttack(playerDefending);
+
+                    break;
+
+
+                case ActionType.Defend:
+
+                    enemy.PlayDefendAnimation();
+
+                    yield return new WaitForSeconds(1f);
+
+                    enemy.Defend();
+
+                    break;
+
+
+                case ActionType.Skill:
+
+                    enemy.PlaySkillAnimation(
+                        action.skillData
+                    );
+
+                    yield return new WaitForSeconds(1f);
+
+                    ExecuteEnemySkill(
+                        action.skillData,
+                        playerDefending
+                    );
+
+                    break;
+
+
+                case ActionType.Heal:
+
+                    enemy.PlayHealAnimation();
+
+                    yield return new WaitForSeconds(1f);
+
+                    EnemyHeal();
+
+                    break;
+            }
+        }
+
+        // ====================================
+        // 次の行動までの間隔
+        // ====================================
+
+        yield return new WaitForSeconds(2f);
     }
 }

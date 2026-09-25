@@ -1,5 +1,7 @@
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class RoguelikeManager : MonoBehaviour
 {
@@ -8,10 +10,14 @@ public class RoguelikeManager : MonoBehaviour
 
     public static RoguelikeManager Instance { get; private set; }
 
+    [Header("Scene")]
+    [SerializeField] private string titleSceneName = "TitleScene";
+
     public PlayerRunData PlayerData { get; private set; }
 
     public enum StageType
     {
+        Title,
         NormalBattle,
         CharacterSelect,
         MapSelect,
@@ -35,17 +41,8 @@ public class RoguelikeManager : MonoBehaviour
 
     private void Awake()
     {
-        Debug.Log(
-            "【RoguelikeManager Awake開始】" +
-            " Instance=" + (Instance != null)
-        );
-
         if (Instance != null && Instance != this)
         {
-            Debug.Log(
-                "【重複RoguelikeManagerを削除】"
-            );
-
             Destroy(gameObject);
             return;
         }
@@ -54,26 +51,47 @@ public class RoguelikeManager : MonoBehaviour
 
         DontDestroyOnLoad(gameObject);
 
-        PlayerData = new PlayerRunData();
+        CurrentStage = StageType.Title;
 
-        if (playerCharacterData != null)
-        {
-            PlayerData.Initialize(
-                playerCharacterData.maxHP
-            );
+        InitializeRun();
+    }
 
-            Debug.Log(
-                "【PlayerData初期化】" +
-                " SpeedBonus=" +
-                PlayerData.speedBonus
-            );
-        }
-        else
+    public void StartNewGame()
+    {
+        Debug.Log("===== NEW GAME START =====");
+
+        // 前回のランデータを初期化
+        InitializeRun();
+
+        // キャラクター選択へ
+        StartCharacterSelect();
+    }
+
+    // ========================================
+    // ラン開始時の初期化
+    // ========================================
+    public void InitializeRun()
+    {
+        if (playerCharacterData == null)
         {
             Debug.LogError(
-                "RoguelikeManagerにPlayer CharacterDataが設定されていません。"
+                "RoguelikeManager：PlayerCharacterDataが設定されていません。"
             );
+
+            return;
         }
+
+        PlayerData = new PlayerRunData();
+
+        PlayerData.Initialize(
+            playerCharacterData.maxHP
+        );
+
+        CurrentBattle = 1;
+
+        Debug.Log(
+            "===== ローグライクデータ初期化 ====="
+        );
     }
 
     public CharacterData PlayerCharacterData
@@ -84,6 +102,8 @@ public class RoguelikeManager : MonoBehaviour
     public void StartCharacterSelect()
     {
         CurrentStage = StageType.CharacterSelect;
+
+        Debug.Log("Character Select");
 
         SceneManager.LoadScene("CharacterSelectScene");
     }
@@ -232,5 +252,22 @@ public class RoguelikeManager : MonoBehaviour
 
         Debug.Log("===== GAME CLEAR =====");
 
+    }
+
+    public void ResetRun()
+    {
+        Destroy(MapManager.Instance);
+        DestoryIfExist("MapManager");
+        InitializeRun();
+    }
+
+    public static void DestoryIfExist(string name)
+    {
+        var gameObject = GameObject.Find(name);
+        if (gameObject == null)
+        {
+            return;
+        }
+        GameObject.Destroy(gameObject);
     }
 }

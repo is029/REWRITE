@@ -16,7 +16,7 @@ MonoBehaviour:
   description: "\u653B\u6483\u3092\u53D7\u3051\u305F\u3068\u304D\u3001\u53CD\u6483\u3059\u308B"
   speed: 6
   power: 25
-  effectType: 8
+  effectType: 7
   duration: 1
   cooldown: 1
   animationTrigger: Skill1

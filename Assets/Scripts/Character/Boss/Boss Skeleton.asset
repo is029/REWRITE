@@ -21,7 +21,7 @@ MonoBehaviour:
   skill2: {fileID: 11400000, guid: 1b72735aa5247c642b78952aeee3fd77, type: 2}
   skill3: {fileID: 11400000, guid: ad2f55f38318b034fa3e746949f085e2, type: 2}
   battleSprite: {fileID: 3081140744875720371, guid: 18d9e902ce7881443b55d87e2f9c724f, type: 3}
-  battleImageSize: {x: 350, y: 350}
+  battleImageSize: {x: 270, y: 330}
   animatorController: {fileID: 9100000, guid: 78f0f9e11234adc41aba6bf10299a99a, type: 2}
   skill1Weight: 25
   skill2Weight: 35

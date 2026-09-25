@@ -7464,7 +7464,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b4960c1e0d8f204880c924918f8d625, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  actionInterval: 0.2
+  damageDelay: 0.8
+  hitDelay: 1.5
+  actionInterval: 0.5
 --- !u!4 &1705268083
 Transform:
   m_ObjectHideFlags: 0
@@ -8043,7 +8045,7 @@ Animator:
   m_GameObject: {fileID: 1765169299}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: ed21c948588a52a42bc71ec238bfef4c, type: 2}
+  m_Controller: {fileID: 9100000, guid: 7c1455fcabe080a458aedb69ba2dcf0a, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
