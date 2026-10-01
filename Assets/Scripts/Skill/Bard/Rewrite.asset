@@ -16,7 +16,7 @@ MonoBehaviour:
   description: "\u884C\u52D5\u6570\u3092\uFF11\u5897\u3084\u3059"
   speed: 3
   power: 0
-  effectType: 9
+  effectType: 8
   duration: 1
   cooldown: 7
   animationTrigger: Skill3
